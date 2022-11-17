@@ -1,0 +1,3 @@
+/home/student/Desktop/OperatingSystems/wet1/smashShell/cmake-build-debug/CMakeFiles/skeleton_smash.dir
+/home/student/Desktop/OperatingSystems/wet1/smashShell/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/student/Desktop/OperatingSystems/wet1/smashShell/cmake-build-debug/CMakeFiles/rebuild_cache.dir

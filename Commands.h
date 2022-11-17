@@ -7,20 +7,27 @@
 #define COMMAND_MAX_ARGS (20)
 
 class Command {
-// TODO: Add your data members
- public:
-  Command(const char* cmd_line);
-  virtual ~Command();
-  virtual void execute() = 0;
-  //virtual void prepare();
-  //virtual void cleanup();
-  // TODO: Add your extra methods if needed
+private:
+    char* cmd_line;
+    char* args[COMMAND_MAX_ARGS + 1] = {nullptr }; //[0]- command
+
+public:
+    Command(const char* cmd_line);
+    virtual ~Command();
+    virtual void execute() = 0;
+    //virtual void prepare();
+    //virtual void cleanup();
+    char* getCmdLine() { return cmd_line; }
+    char* getArgByIndex(int i) { return args[i]; }
+
 };
 
 class BuiltInCommand : public Command {
  public:
-  BuiltInCommand(const char* cmd_line);
-  virtual ~BuiltInCommand() {}
+  BuiltInCommand(const char* cmd_line) : Command(cmd_line) {}
+  virtual ~BuiltInCommand() = default;
+
+  virtual void execute() = 0; //pure function
 };
 
 class ExternalCommand : public Command {
@@ -48,6 +55,13 @@ class RedirectionCommand : public Command {
   //void cleanup() override;
 };
 
+class ChangePromptCommand : public BuiltInCommand {
+// TODO: Add your data members public:
+    ChangePromptCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
+    virtual ~ChangePromptCommand() = default;
+    void execute() override;
+};
+
 class ChangeDirCommand : public BuiltInCommand {
 // TODO: Add your data members public:
   ChangeDirCommand(const char* cmd_line, char** plastPwd);
@@ -64,10 +78,11 @@ class GetCurrDirCommand : public BuiltInCommand {
 
 class ShowPidCommand : public BuiltInCommand {
  public:
-  ShowPidCommand(const char* cmd_line);
-  virtual ~ShowPidCommand() {}
+  ShowPidCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
+  virtual ~ShowPidCommand() = default;
   void execute() override;
 };
+
 
 class JobsList;
 class QuitCommand : public BuiltInCommand {
@@ -161,6 +176,8 @@ class KillCommand : public BuiltInCommand {
 
 class SmallShell {
  private:
+    pid_t smash_pid;
+    std::string current_prompt;
   // TODO: Add your data members
   SmallShell();
  public:
@@ -175,7 +192,11 @@ class SmallShell {
   }
   ~SmallShell();
   void executeCommand(const char* cmd_line);
-  // TODO: add extra methods as needed
+
+  std::string getCurrentPrompt() { return current_prompt; }
+  void setCurrentPrompt(std::string prompt_str) { current_prompt = prompt_str; }
+
+  pid_t getSmashPID() { return smash_pid; }
 };
 
 #endif //SMASH_COMMAND_H_

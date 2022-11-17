@@ -75,7 +75,31 @@ void _removeBackgroundSign(char* cmd_line) {
   cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
 }
 
-// TODO: Add your implementation for classes in Commands.h 
+Command::Command(const char *cmd_line) {
+    this->cmd_line = new char[strlen(cmd_line) + 1];
+    strcpy(this->cmd_line, cmd_line);
+}
+
+Command::~Command() {
+    delete[] cmd_line;
+}
+
+
+void ChangePromptCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+    // there are no arguments
+    if (this->getArgByIndex(1) == nullptr) {
+        shell.setCurrentPrompt("smash");
+    }
+    else {
+        shell.setCurrentPrompt(this->getArgByIndex(1));
+    }
+}
+
+oid ShowPidCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+    std::cout << "smash pid is " << shell.getSmashPID() << std::endl;
+}
 
 SmallShell::SmallShell() {
 // TODO: add your implementation
