@@ -9,6 +9,8 @@
 
 using namespace std;
 
+const std::string WHITESPACE = " \n\r\t\f\v";
+
 #if 0
 #define FUNC_ENTRY()  \
   cout << __PRETTY_FUNCTION__ << " --> " << endl;
@@ -96,11 +98,18 @@ void ChangePromptCommand::execute() {
     }
 }
 
-oid ShowPidCommand::execute() {
+void ShowPidCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     std::cout << "smash pid is " << shell.getSmashPID() << std::endl;
 }
 
+
+void GetCurrDirCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+    char buffer[FILENAME_MAX];
+    getcwd(buffer, FILENAME_MAX);
+    std::cout << buffer << endls;
+}
 SmallShell::SmallShell() {
 // TODO: add your implementation
 }
@@ -113,7 +122,20 @@ SmallShell::~SmallShell() {
 * Creates and returns a pointer to Command class which matches the given command line (cmd_line)
 */
 Command * SmallShell::CreateCommand(const char* cmd_line) {
-	// For example:
+    char* args_making[COMMAND_MAX_ARGS + 1] = {nullptr};
+    _parseCommandLine(cmd_line, args_making);
+
+    if (strcmp(args_making[0], CHPROMPT) == 0) {
+        return new ChangePromptCommand(cmd_line);
+    }
+
+    else if (strcmp(args_making[0], SHOWPID) == 0) {
+        return new ShowPidCommand(cmd_line);
+    }
+
+    else if (strcmp(args_making[0], PWD) == 0) {
+        return new GetCurrDirCommand(cmd_line);
+    }
 /*
   string cmd_s = _trim(string(cmd_line));
   string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));

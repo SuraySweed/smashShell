@@ -6,10 +6,20 @@
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
 
+#define CHPROMPT "chprompt"
+#define SHOWPID "showpid"
+#define PWD "pwd"
+#define CD "cd"
+#define JOBS "jobs"
+#define KILL "kill"
+#define FG "fg"
+#define BG "bg"
+#define QUIT "quit"
+
 class Command {
 private:
     char* cmd_line;
-    char* args[COMMAND_MAX_ARGS + 1] = {nullptr }; //[0]- command
+    char* args[COMMAND_MAX_ARGS + 1] = {nullptr}; //[0]- command
 
 public:
     Command(const char* cmd_line);
@@ -19,7 +29,7 @@ public:
     //virtual void cleanup();
     char* getCmdLine() { return cmd_line; }
     char* getArgByIndex(int i) { return args[i]; }
-
+    char** getCommandArguments() { return args; }
 };
 
 class BuiltInCommand : public Command {
@@ -57,22 +67,26 @@ class RedirectionCommand : public Command {
 
 class ChangePromptCommand : public BuiltInCommand {
 // TODO: Add your data members public:
+public:
     ChangePromptCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
     virtual ~ChangePromptCommand() = default;
     void execute() override;
 };
 
 class ChangeDirCommand : public BuiltInCommand {
-// TODO: Add your data members public:
-  ChangeDirCommand(const char* cmd_line, char** plastPwd);
-  virtual ~ChangeDirCommand() {}
-  void execute() override;
+private:
+    std::string new_dir_path;
+
+public:
+    ChangeDirCommand(const char* cmd_line, char** plastPwd);
+    virtual ~ChangeDirCommand() {}
+    void execute() override;
 };
 
 class GetCurrDirCommand : public BuiltInCommand {
  public:
-  GetCurrDirCommand(const char* cmd_line);
-  virtual ~GetCurrDirCommand() {}
+  GetCurrDirCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
+  virtual ~GetCurrDirCommand() = default;
   void execute() override;
 };
 
@@ -176,10 +190,13 @@ class KillCommand : public BuiltInCommand {
 
 class SmallShell {
  private:
-    pid_t smash_pid;
-    std::string current_prompt;
-  // TODO: Add your data members
-  SmallShell();
+    pid_t smash_pid;                    // for show pid
+    std::string current_prompt;         // for chprompt
+    char** last_dir_path;                // for cd
+
+    SmallShell();
+
+
  public:
   Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
