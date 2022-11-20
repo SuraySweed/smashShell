@@ -126,10 +126,13 @@ public:
             pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
         ~JobEntry() = default;
   };
+private:
+    std::vector<JobEntry*> jobs;
+    int job_counter = 1;
 public:
-    JobsList();
-    ~JobsList();
-    void addJob(Command* cmd, bool isStopped = false);
+    JobsList() = default;
+    ~JobsList() = default;
+    void addJob(Command* cmd, pid_t pid, bool isStopped);
     void printJobsList();
     void killAllJobs();
     void removeFinishedJobs();
@@ -141,10 +144,11 @@ public:
 };
 
 class JobsCommand : public BuiltInCommand {
- // TODO: Add your data members
+private:
+    JobsList* jobs;
  public:
-  JobsCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~JobsCommand() {}
+  JobsCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
+  virtual ~JobsCommand() = default;
   void execute() override;
 };
 

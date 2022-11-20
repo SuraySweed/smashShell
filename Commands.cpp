@@ -118,7 +118,7 @@ void GetCurrDirCommand::execute() {
 
     char buffer[FILENAME_MAX];
     getCurrentDirectoryName(buffer);
-    std::cout << buffer << endls;
+    std::cout << buffer << std::endl;
 }
 
 void ChangeDirCommand::execute() {
@@ -154,6 +154,82 @@ void ChangeDirCommand::execute() {
         return;
     }
 }
+
+void JobsList::addJob(Command *cmd, pid_t pid, bool isStopped) {
+    removeFinishedJobs();
+    JobEntry* job = new JobEntry(job_counter + 1, pid, isStopped, cmd);
+    job_counter += 1;
+    jobs.push_back(job);
+}
+
+void JobsList::printJobsList() {
+    for (JobEntry* job:jobs) {
+        std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
+        (int) difftime(time(nullptr), job->elapsed_time) << " secs " << (job->is_stopped ? "(stopped)" : "") << std::endl;
+    }
+}
+
+void JobsList::killAllJobs() {
+    removeFinishedJobs();
+    for (JobEntry* job:jobs) {
+        if (kill(job->pid, SIGKILL) < 0) {
+            perror("smash error: kill failed");
+        }
+    }
+    if (!jobs.empty()) {
+        jobs.clear();
+        //removeFinishedJobs();
+    }
+}
+
+void JobsList::removeFinishedJobs() {
+    int index = 0;
+    for (JobEntry* job:jobs) {
+        int res = waitpid(job->pid, nullptr, WNOHANG);
+        if (res != 0) {
+            jobs.erase(jobs.begin() + index);
+        }
+        index++;
+    }
+}
+
+JobsList::JobEntry *JobsList::getJobById(int jobId) {
+    for (JobEntry* job:jobs) {
+        if (job->job_id == jobId) {
+            return job;
+        }
+    }
+    return nullptr;
+}
+
+void JobsList::removeJobById(int jobId) {
+    for (auto it = jobs.begin(); it != jobs.end(); it++) {
+        if ((*it)->job_id == jobId) {
+            jobs.erase(it);
+            return;
+        }
+    }
+}
+
+JobsList::JobEntry *JobsList::getLastJob(int *lastJobId) {
+    if (jobs.empty() || !lastJobId) {
+        return nullptr;
+    }
+    //removeFInshiedJobs..
+    *lastJobId = job_counter;
+    return getJobById(job_counter);
+}
+
+// ask for this function, compare with time or with ID
+JobsList::JobEntry *JobsList::getLastStoppedJob(int *jobId) {
+
+}
+
+void JobsCommand::execute() {
+    jobs->removeFinishedJobs();
+    jobs->printJobsList();
+}
+
 
 SmallShell::SmallShell() {
 // TODO: add your implementation
