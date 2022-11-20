@@ -75,12 +75,14 @@ public:
 
 class ChangeDirCommand : public BuiltInCommand {
 private:
-    std::string new_dir_path;
+    std::string last_directory_path;
 
 public:
-    ChangeDirCommand(const char* cmd_line, char** plastPwd);
-    virtual ~ChangeDirCommand() {}
+    ChangeDirCommand(const char* cmd_line, char** plastPwd) :
+             BuiltInCommand(cmd_line), last_directory_path(std::string(*plastPwd)) {}
+    virtual ~ChangeDirCommand() = default;
     void execute() override;
+
 };
 
 class GetCurrDirCommand : public BuiltInCommand {
@@ -99,6 +101,8 @@ class ShowPidCommand : public BuiltInCommand {
 
 
 class JobsList;
+
+
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members
 public:
@@ -109,23 +113,31 @@ public:
 
 
 class JobsList {
- public:
-  class JobEntry {
-   // TODO: Add your data members
+public:
+    class JobEntry {
+    public:
+        int job_id;
+        pid_t pid;
+        time_t elapsed_time;
+        bool is_stopped;
+        Command* command;
+
+        JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID),
+            pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
+        ~JobEntry() = default;
   };
- // TODO: Add your data members
- public:
-  JobsList();
-  ~JobsList();
-  void addJob(Command* cmd, bool isStopped = false);
-  void printJobsList();
-  void killAllJobs();
-  void removeFinishedJobs();
-  JobEntry * getJobById(int jobId);
-  void removeJobById(int jobId);
-  JobEntry * getLastJob(int* lastJobId);
-  JobEntry *getLastStoppedJob(int *jobId);
-  // TODO: Add extra methods or modify exisitng ones as needed
+public:
+    JobsList();
+    ~JobsList();
+    void addJob(Command* cmd, bool isStopped = false);
+    void printJobsList();
+    void killAllJobs();
+    void removeFinishedJobs();
+    JobEntry * getJobById(int jobId);
+    void removeJobById(int jobId);
+    JobEntry * getLastJob(int* lastJobId);
+    JobEntry *getLastStoppedJob(int *jobId);
+    // TODO: Add extra methods or modify exisitng ones as needed
 };
 
 class JobsCommand : public BuiltInCommand {
@@ -192,7 +204,7 @@ class SmallShell {
  private:
     pid_t smash_pid;                    // for show pid
     std::string current_prompt;         // for chprompt
-    char** last_dir_path;                // for cd
+    std::string last_dir_path;                // for cd
 
     SmallShell();
 
