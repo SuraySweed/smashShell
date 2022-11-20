@@ -77,6 +77,11 @@ void _removeBackgroundSign(char* cmd_line) {
   cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
 }
 
+static void getCurrentDirectoryName(char* buffer) {
+    SmallShell& shell = SmallShell::getInstance();
+    getcwd(buffer, FILENAME_MAX);
+}
+
 Command::Command(const char *cmd_line) {
     this->cmd_line = new char[strlen(cmd_line) + 1];
     strcpy(this->cmd_line, cmd_line);
@@ -105,11 +110,51 @@ void ShowPidCommand::execute() {
 
 
 void GetCurrDirCommand::execute() {
+    /*
     SmallShell& shell = SmallShell::getInstance();
     char buffer[FILENAME_MAX];
     getcwd(buffer, FILENAME_MAX);
+    */
+
+    char buffer[FILENAME_MAX];
+    getCurrentDirectoryName(buffer);
     std::cout << buffer << endls;
 }
+
+void ChangeDirCommand::execute() {
+    if (this->getArgByIndex(2) != nullptr) {
+        std::cerr << "smash error: cd: too many arguments" << std::endl;
+    }
+
+    // there is '-' in the cd command
+    char current_directory[FILENAME_MAX] = {0};
+
+    if (strcmp(this->getArgByIndex(1), "-") == 0) {
+        // the last working directory was empty
+        if(this->last_directory_path.empty()) {
+            std::cerr << "smash error: cd: OLDPWD not set" << endl;
+        }
+        //set the current directory to the last one
+        getCurrentDirectoryName(current_directory);
+
+        if (chdir(this->last_directory_path.c_str()) == -1) {
+            perror("smash error: chdir failed");
+        }
+
+        last_directory_path = std::string(current_directory);
+        return;
+    }
+    else {
+        getCurrentDirectoryName(current_directory);
+        if (chdir(this->getArgByIndex(1)) == -1) {
+            perror("smash error: chdir failed");
+        }
+
+        last_directory_path = std::string(current_directory);
+        return;
+    }
+}
+
 SmallShell::SmallShell() {
 // TODO: add your implementation
 }
