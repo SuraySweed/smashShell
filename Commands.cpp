@@ -222,7 +222,7 @@ JobsList::JobEntry *JobsList::getLastJob(int *lastJobId) {
 
 // ask for this function, compare with time or with ID
 JobsList::JobEntry *JobsList::getLastStoppedJob(int *jobId) {
-
+    return nullptr;
 }
 
 void JobsCommand::execute() {
@@ -230,6 +230,157 @@ void JobsCommand::execute() {
     jobs->printJobsList();
 }
 
+void ForegroundCommand::execute() {
+    jobs->removeFinishedJobs();
+    SmallShell& shell = SmallShell::getInstance();
+    if (this->getArgByIndex(2) != nullptr) {
+        std::cerr << "smash error: fg: invalid arguments" << std::endl;
+    }
+
+    JobsList::JobEntry* job = nullptr;
+    if (this->getArgByIndex(1) != nullptr) {
+        std::string jobID_argument = this->getArgByIndex(1);
+        int job_id = std::stoi(jobID_argument); // convert argument string ti intger
+        if (job_id == 0) {
+            std::cerr << "smash error: fg: invalid arguments" << std::endl;
+        }
+
+        job = jobs->getJobById(job_id);
+        if (job == nullptr) {
+            std::cerr << "smash error: fg: job-id " << jobID_argument << " does not exist" << std::endl;
+            return;
+        }
+    }
+    // if fg was typed with no arguments (without job-id) but the jobs list is empty
+    else {
+        if (this->jobs->getJobs().empty()) {
+            std::cerr << "smash error: fg: jobs list is empty" << std::endl;
+            return;
+        }
+        /*
+        * if the job-id argument is not specified, then the job with
+        * the maximal job id in the jobs list should be selected
+        */
+        int last_jobID = 0;
+        job = jobs->getLastJob(&last_jobID);
+    }
+
+    if (job->is_stopped) {
+        int killSYSCALL_result = kill(job->pid, SIGCONT);
+        if (killSYSCALL_result == -1) {
+            std::perror("smash error: kill  failed");
+            return;
+        }
+    }
+
+    std::cout << job->command->getCmdLine() << " : " << job->pid << std::endl;
+    shell.setCurrentRunningJobPID(job->pid);
+    shell.setCurrentCommandLine(std::string(job->command->getCmdLine()));
+
+
+    int status = 0;
+    int waitPID_result = waitpid(job->pid, &status, WUNTRACED);
+    if (waitPID_result == -1) {
+        std:perror("smash error: waitpid failed");
+        return;
+    }
+}
+
+void BackgroundCommand::execute() {
+    jobs->removeFinishedJobs();
+    SmallShell& shell = SmallShell::getInstance();
+    if (this->getArgByIndex(2) != nullptr) {
+        std::cerr << "smash error: bg: invalid arguments" << std::endl;
+    }
+
+    JobsList::JobEntry* job = nullptr;
+    if (this->getArgByIndex(1) != nullptr) {
+        std::string jobID_argument = this->getArgByIndex(1);
+        int job_id = std::stoi(jobID_argument); // convert argument string ti intger
+        if (job_id == 0) {
+            std::cerr << "smash error: bg: invalid arguments" << std::endl;
+        }
+
+        job = jobs->getJobById(job_id);
+        if (job == nullptr) {
+            std::cerr << "smash error: bg: job-id " << jobID_argument << " does not exist" << std::endl;
+            return;
+        }
+        if (!job->is_stopped) {
+            std::cerr << "smash error: bg: job-id " << jobID_argument << " is already running in the background" << std::endl;
+            return;
+        }
+    }
+
+    // if bg was typed with no arguments (without job-id)
+    else {
+        /*
+        * if the job-id argument is not specified, then the job with
+        * the maximal job id in the jobs list should be selected
+        */
+        int last_jobID = 0;
+        job = jobs->getLastJob(&last_jobID);
+        if (job == nullptr) {
+            std::cerr << "smash error: bg: there is no stopped jobs to resume" << std::endl;
+            return;
+        }
+    }
+
+    job->is_stopped = false;
+    std::cout << job->command->getCmdLine() << " : " << job->pid << std::endl;
+
+    int killSYSCALL_result = kill(job->pid, SIGCONT);
+    if (killSYSCALL_result == -1) {
+        std::perror("smash error: kill failed");
+        return;
+    }
+}
+
+void QuitCommand::execute() {
+    if (this->getArgByIndex(1) && (strcmp(this->getArgByIndex(1), KILL) == 0)) {
+        std::cout << "smash: sending SIGKILL signal to " << jobs->getJobs().size() << " jobs:" << endl;
+        for (JobsList::JobEntry* job:jobs->getJobs()) {
+            std::cout << job->pid << " : " << job->command->getCmdLine() << std::endl;
+        }
+        this->jobs->killAllJobs();
+    }
+    exit(0);
+}
+
+void KillCommand::execute() {
+    this->jobs->removeFinishedJobs();
+    int jobID = -1, signalNumber = -1;
+    if (this->getArgByIndex(2)) {
+        jobID = atoi(this->getArgByIndex(2));
+    }
+
+    if (this->getArgByIndex(1)) {
+        signalNumber = atoi(this->getArgByIndex(2));
+    }
+
+    if (this->getArgByIndex(3) || jobID == -1 || signalNumber == -1 || signalNumber < 1 || signalNumber > 31) {
+        std::cerr << "smash error: kill: invalid arguments" << std::endl;
+        return;
+    }
+
+    JobsList::JobEntry* job = jobs->getJobById(jobID);
+    if (!job) {
+        std::cerr << "smash error: kill: job-id " << jobID << " does not exist" << std::endl;
+        return;
+    }
+
+    if(job->pid == -1) {
+        std::cerr << "smash error: kill: job-id " << jobID << " does not exist" << std::endl;
+        return;
+    }
+    if (kill(job->pid, signalNumber) == -1) {
+        std::perror("smash error: kill failed");
+        return;
+    }
+
+    std::cout << "signal number " << signalNumber <<  " was sent to pid " << job->pid << std::endl;
+    this->jobs->removeFinishedJobs();
+}
 
 SmallShell::SmallShell() {
 // TODO: add your implementation
@@ -257,6 +408,34 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     else if (strcmp(args_making[0], PWD) == 0) {
         return new GetCurrDirCommand(cmd_line);
     }
+
+    else if (strcmp(args_making[0], CD) == 0) {
+        return new ChangePromptCommand(cmd_line);
+    }
+
+    else if (strcmp(args_making[0], JOBS) == 0) {
+        return new JobsCommand(cmd_line, &jobs);
+    }
+
+    else if (strcmp(args_making[0], FG) == 0) {
+        return new ForegroundCommand(cmd_line, &jobs);
+    }
+
+    else if (strcmp(args_making[0], BG) == 0) {
+        return new BackgroundCommand(cmd_line, &jobs);
+    }
+
+    else if (strcmp(args_making[0], QUIT) == 0) {
+        return new QuitCommand(cmd_line, &jobs);
+    }
+
+    else if (strcmp(args_making[0], KILL) == 0) {
+        return new KillCommand(cmd_line, &jobs);
+    }
+
+
+
+
 /*
   string cmd_s = _trim(string(cmd_line));
   string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));

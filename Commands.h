@@ -103,15 +103,6 @@ class ShowPidCommand : public BuiltInCommand {
 class JobsList;
 
 
-class QuitCommand : public BuiltInCommand {
-// TODO: Add your data members
-public:
-  QuitCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~QuitCommand() {}
-  void execute() override;
-};
-
-
 class JobsList {
 public:
     class JobEntry {
@@ -125,6 +116,7 @@ public:
         JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID),
             pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
         ~JobEntry() = default;
+        ////// we have to implemenet operator=
   };
 private:
     std::vector<JobEntry*> jobs;
@@ -140,7 +132,7 @@ public:
     void removeJobById(int jobId);
     JobEntry * getLastJob(int* lastJobId);
     JobEntry *getLastStoppedJob(int *jobId);
-    // TODO: Add extra methods or modify exisitng ones as needed
+    std::vector<JobEntry*> getJobs() { return jobs; }
 };
 
 class JobsCommand : public BuiltInCommand {
@@ -153,19 +145,35 @@ private:
 };
 
 class ForegroundCommand : public BuiltInCommand {
- // TODO: Add your data members
+    JobsList* jobs;
  public:
-  ForegroundCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~ForegroundCommand() {}
+  ForegroundCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
+  virtual ~ForegroundCommand() = default;
   void execute() override;
 };
 
 class BackgroundCommand : public BuiltInCommand {
- // TODO: Add your data members
- public:
-  BackgroundCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~BackgroundCommand() {}
-  void execute() override;
+    JobsList* jobs;
+public:
+    BackgroundCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
+    virtual ~BackgroundCommand() = default;
+    void execute() override;
+};
+
+class QuitCommand : public BuiltInCommand {
+    JobsList* jobs;
+public:
+    QuitCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
+    virtual ~QuitCommand() = default;
+    void execute() override;
+};
+
+class KillCommand : public BuiltInCommand {
+    JobsList* jobs;
+public:
+    KillCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
+    virtual ~KillCommand() = default;
+    void execute() override;
 };
 
 class TimeoutCommand : public BuiltInCommand {
@@ -195,41 +203,39 @@ class SetcoreCommand : public BuiltInCommand {
   void execute() override;
 };
 
-class KillCommand : public BuiltInCommand {
-  /* Bonus */
- // TODO: Add your data members
- public:
-  KillCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~KillCommand() {}
-  void execute() override;
-};
 
 class SmallShell {
  private:
     pid_t smash_pid;                    // for show pid
     std::string current_prompt;         // for chprompt
     std::string last_dir_path;                // for cd
+    pid_t current_running_jobPID;
+    std::string cuurent_command_line;
 
     SmallShell();
 
-
  public:
-  Command *CreateCommand(const char* cmd_line);
-  SmallShell(SmallShell const&)      = delete; // disable copy ctor
-  void operator=(SmallShell const&)  = delete; // disable = operator
-  static SmallShell& getInstance() // make SmallShell singleton
-  {
-    static SmallShell instance; // Guaranteed to be destroyed.
-    // Instantiated on first use.
-    return instance;
-  }
-  ~SmallShell();
-  void executeCommand(const char* cmd_line);
 
-  std::string getCurrentPrompt() { return current_prompt; }
-  void setCurrentPrompt(std::string prompt_str) { current_prompt = prompt_str; }
+    JobsList jobs;
 
-  pid_t getSmashPID() { return smash_pid; }
+    Command *CreateCommand(const char* cmd_line);
+    SmallShell(SmallShell const&)      = delete; // disable copy ctor
+    void operator=(SmallShell const&)  = delete; // disable = operator
+    static SmallShell& getInstance() // make SmallShell singleton
+    {
+        static SmallShell instance; // Guaranteed to be destroyed.
+        // Instantiated on first use.
+        // return instance;
+    }
+    ~SmallShell();
+    void executeCommand(const char* cmd_line);
+
+    std::string getCurrentPrompt() { return current_prompt; }
+    void setCurrentPrompt(std::string prompt_str) { current_prompt = prompt_str; }
+
+    pid_t getSmashPID() { return smash_pid; }
+    void setCurrentRunningJobPID(pid_t jobPID) { current_running_jobPID = jobPID; }
+    void setCurrentCommandLine(std::string cmd_line) { cuurent_command_line = cmd_line; }
 };
 
 #endif //SMASH_COMMAND_H_
