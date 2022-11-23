@@ -101,18 +101,6 @@ class ShowPidCommand : public BuiltInCommand {
 
 
 class JobsList;
-<<<<<<< HEAD
-=======
-
-
-class QuitCommand : public BuiltInCommand {
-// TODO: Add your data members
-public:
-  QuitCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~QuitCommand() {}
-  void execute() override;
-};
->>>>>>> 5545d6493359f0f06fbeb3248de3298e291fdb4f
 
 
 class JobsList {
@@ -128,10 +116,7 @@ public:
         JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID),
             pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
         ~JobEntry() = default;
-<<<<<<< HEAD
         ////// we have to implemenet operator=
-=======
->>>>>>> 5545d6493359f0f06fbeb3248de3298e291fdb4f
   };
 private:
     std::vector<JobEntry*> jobs;
@@ -147,11 +132,7 @@ public:
     void removeJobById(int jobId);
     JobEntry * getLastJob(int* lastJobId);
     JobEntry *getLastStoppedJob(int *jobId);
-<<<<<<< HEAD
     std::vector<JobEntry*> getJobs() { return jobs; }
-=======
-    // TODO: Add extra methods or modify exisitng ones as needed
->>>>>>> 5545d6493359f0f06fbeb3248de3298e291fdb4f
 };
 
 class JobsCommand : public BuiltInCommand {
@@ -228,11 +209,8 @@ class SmallShell {
     pid_t smash_pid;                    // for show pid
     std::string current_prompt;         // for chprompt
     std::string last_dir_path;                // for cd
-<<<<<<< HEAD
     pid_t current_running_jobPID;
     std::string cuurent_command_line;
-=======
->>>>>>> 5545d6493359f0f06fbeb3248de3298e291fdb4f
 
     SmallShell();
 

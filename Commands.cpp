@@ -119,7 +119,6 @@ void GetCurrDirCommand::execute() {
     char buffer[FILENAME_MAX];
     getCurrentDirectoryName(buffer);
     std::cout << buffer << std::endl;
-<<<<<<< HEAD
 }
 
 void ChangeDirCommand::execute() {
@@ -383,120 +382,6 @@ void KillCommand::execute() {
     this->jobs->removeFinishedJobs();
 }
 
-=======
-}
-
-void ChangeDirCommand::execute() {
-    if (this->getArgByIndex(2) != nullptr) {
-        std::cerr << "smash error: cd: too many arguments" << std::endl;
-    }
-
-    // there is '-' in the cd command
-    char current_directory[FILENAME_MAX] = {0};
-
-    if (strcmp(this->getArgByIndex(1), "-") == 0) {
-        // the last working directory was empty
-        if(this->last_directory_path.empty()) {
-            std::cerr << "smash error: cd: OLDPWD not set" << endl;
-        }
-        //set the current directory to the last one
-        getCurrentDirectoryName(current_directory);
-
-        if (chdir(this->last_directory_path.c_str()) == -1) {
-            perror("smash error: chdir failed");
-        }
-
-        last_directory_path = std::string(current_directory);
-        return;
-    }
-    else {
-        getCurrentDirectoryName(current_directory);
-        if (chdir(this->getArgByIndex(1)) == -1) {
-            perror("smash error: chdir failed");
-        }
-
-        last_directory_path = std::string(current_directory);
-        return;
-    }
-}
-
-void JobsList::addJob(Command *cmd, pid_t pid, bool isStopped) {
-    removeFinishedJobs();
-    JobEntry* job = new JobEntry(job_counter + 1, pid, isStopped, cmd);
-    job_counter += 1;
-    jobs.push_back(job);
-}
-
-void JobsList::printJobsList() {
-    for (JobEntry* job:jobs) {
-        std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
-        (int) difftime(time(nullptr), job->elapsed_time) << " secs " << (job->is_stopped ? "(stopped)" : "") << std::endl;
-    }
-}
-
-void JobsList::killAllJobs() {
-    removeFinishedJobs();
-    for (JobEntry* job:jobs) {
-        if (kill(job->pid, SIGKILL) < 0) {
-            perror("smash error: kill failed");
-        }
-    }
-    if (!jobs.empty()) {
-        jobs.clear();
-        //removeFinishedJobs();
-    }
-}
-
-void JobsList::removeFinishedJobs() {
-    int index = 0;
-    for (JobEntry* job:jobs) {
-        int res = waitpid(job->pid, nullptr, WNOHANG);
-        if (res != 0) {
-            jobs.erase(jobs.begin() + index);
-        }
-        index++;
-    }
-}
-
-JobsList::JobEntry *JobsList::getJobById(int jobId) {
-    for (JobEntry* job:jobs) {
-        if (job->job_id == jobId) {
-            return job;
-        }
-    }
-    return nullptr;
-}
-
-void JobsList::removeJobById(int jobId) {
-    for (auto it = jobs.begin(); it != jobs.end(); it++) {
-        if ((*it)->job_id == jobId) {
-            jobs.erase(it);
-            return;
-        }
-    }
-}
-
-JobsList::JobEntry *JobsList::getLastJob(int *lastJobId) {
-    if (jobs.empty() || !lastJobId) {
-        return nullptr;
-    }
-    //removeFInshiedJobs..
-    *lastJobId = job_counter;
-    return getJobById(job_counter);
-}
-
-// ask for this function, compare with time or with ID
-JobsList::JobEntry *JobsList::getLastStoppedJob(int *jobId) {
-
-}
-
-void JobsCommand::execute() {
-    jobs->removeFinishedJobs();
-    jobs->printJobsList();
-}
-
-
->>>>>>> 5545d6493359f0f06fbeb3248de3298e291fdb4f
 SmallShell::SmallShell() {
 // TODO: add your implementation
 }
