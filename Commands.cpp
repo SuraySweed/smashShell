@@ -24,57 +24,58 @@ const std::string WHITESPACE = " \n\r\t\f\v";
 
 string _ltrim(const std::string& s)
 {
-  size_t start = s.find_first_not_of(WHITESPACE);
-  return (start == std::string::npos) ? "" : s.substr(start);
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == std::string::npos) ? "" : s.substr(start);
 }
 
 string _rtrim(const std::string& s)
 {
-  size_t end = s.find_last_not_of(WHITESPACE);
-  return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
 }
 
 string _trim(const std::string& s)
 {
-  return _rtrim(_ltrim(s));
+    return _rtrim(_ltrim(s));
 }
 
 int _parseCommandLine(const char* cmd_line, char** args) {
-  FUNC_ENTRY()
-  int i = 0;
-  std::istringstream iss(_trim(string(cmd_line)).c_str());
-  for(std::string s; iss >> s; ) {
-    args[i] = (char*)malloc(s.length()+1);
-    memset(args[i], 0, s.length()+1);
-    strcpy(args[i], s.c_str());
-    args[++i] = NULL;
-  }
-  return i;
+    FUNC_ENTRY()
+    int i = 0;
+    std::istringstream iss(_trim(string(cmd_line)).c_str());
+    for(std::string s; iss >> s; ) {
+        args[i] = (char*)malloc(s.length()+1);
+        memset(args[i], 0, s.length()+1);
+        strcpy(args[i], s.c_str());
+        args[++i] = NULL;
+    }
+
+    return i;
 
   FUNC_EXIT()
 }
 
 bool _isBackgroundComamnd(const char* cmd_line) {
-  const string str(cmd_line);
-  return str[str.find_last_not_of(WHITESPACE)] == '&';
+    const string str(cmd_line);
+    return str[str.find_last_not_of(WHITESPACE)] == '&';
 }
 
 void _removeBackgroundSign(char* cmd_line) {
-  const string str(cmd_line);
-  // find last character other than spaces
-  unsigned int idx = str.find_last_not_of(WHITESPACE);
-  // if all characters are spaces then return
-  if (idx == string::npos) {
-    return;
-  }
-  // if the command line does not end with & then return
-  if (cmd_line[idx] != '&') {
-    return;
-  }
-  // replace the & (background sign) with space and then remove all tailing spaces.
-  cmd_line[idx] = ' ';
-  // truncate the command line string up to the last non-space character
-  cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
+    const string str(cmd_line);
+    // find last character other than spaces
+    unsigned int idx = str.find_last_not_of(WHITESPACE);
+    // if all characters are spaces then return
+    if (idx == string::npos) {
+        return;
+    }
+    // if the command line does not end with & then return
+    if (cmd_line[idx] != '&') {
+        return;
+    }
+    // replace the & (background sign) with space and then remove all tailing spaces.
+    cmd_line[idx] = ' ';
+    // truncate the command line string up to the last non-space character
+    cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
 }
 
 static void getCurrentDirectoryName(char* buffer) {
@@ -382,13 +383,53 @@ void KillCommand::execute() {
     this->jobs->removeFinishedJobs();
 }
 
-SmallShell::SmallShell() {
-// TODO: add your implementation
+void ExternalCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        std::perror("smash error: fork failed");
+        return;
+    }
+
+    if (pid == 0) {
+        int setGroup_result = setpgrp();
+        if (setGroup_result == -1) {
+            std::perror("smash error: setpgrp failed");
+            return;
+        }
+
+        if (is_backGround) {
+            _removeBackgroundSign(external_cmd_line);
+        }
+
+        int execlResult = execl("/bin/bash", "/bin/bash", "-c", external_cmd_line, nullptr);
+        if (execlResult == -1) {
+            perror("smash error: execl failed");
+            return;
+        }
+    }
+    else {
+        int status = 0;
+
+        if (!is_backGround) {
+            shell.setCurrentRunningJobPID(pid);
+            shell.setCurrentCommandLine(std::string(this->getCmdLine()));
+            int waitResult = waitpid(pid, &status, WUNTRACED);
+            if (waitResult == -1) {
+                perror("smash error: waitpid failed");
+                return;
+            }
+        }
+        else {
+            ExternalCommand* externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
+            jobs->addJob(externalCmd, pid, false);
+        }
+    }
 }
 
-SmallShell::~SmallShell() {
-// TODO: add your implementation
-}
+SmallShell::SmallShell() : smash_pid(getpid()), current_prompt("smash"), last_dir_path(), current_running_jobPID(-1), cuurent_command_line() {}
+
 
 /**
 * Creates and returns a pointer to Command class which matches the given command line (cmd_line)
@@ -456,9 +497,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
-  // TODO: Add your implementation here
-  // for example:
-  // Command* cmd = CreateCommand(cmd_line);
-  // cmd->execute();
-  // Please note that you must fork smash process for some commands (e.g., external commands....)
+    jobs.removeFinishedJobs();
+    Command* cmd = CreateCommand(cmd_line);
+    if (cmd) {
+        cmd->execute();
+    }
+    delete cmd;
+    current_running_jobPID = -1;
+    jobs.removeFinishedJobs();
 }

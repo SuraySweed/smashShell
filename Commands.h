@@ -2,6 +2,7 @@
 #define SMASH_COMMAND_H_
 
 #include <vector>
+#include <string>
 
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
@@ -32,19 +33,27 @@ public:
     char** getCommandArguments() { return args; }
 };
 
-class BuiltInCommand : public Command {
- public:
-  BuiltInCommand(const char* cmd_line) : Command(cmd_line) {}
-  virtual ~BuiltInCommand() = default;
+class JobsList;
 
-  virtual void execute() = 0; //pure function
+class BuiltInCommand : public Command {
+public:
+    BuiltInCommand(const char* cmd_line) : Command(cmd_line) {}
+    virtual ~BuiltInCommand() = default;
+
+    virtual void execute() = 0; //pure function
 };
 
 class ExternalCommand : public Command {
- public:
-  ExternalCommand(const char* cmd_line);
-  virtual ~ExternalCommand() {}
-  void execute() override;
+    JobsList* jobs;
+    bool is_backGround;
+    char* external_cmd_line;
+public:
+    ExternalCommand(const char* cmd_line, JobsList* jobs, bool is_bg) : Command(cmd_line), jobs(jobs), is_backGround(is_bg) {
+        external_cmd_line = new char[81];
+        strcpy(external_cmd_line, this->getCmdLine());
+    }
+    virtual ~ExternalCommand() = default;
+    void execute() override;
 };
 
 class PipeCommand : public Command {
@@ -66,7 +75,6 @@ class RedirectionCommand : public Command {
 };
 
 class ChangePromptCommand : public BuiltInCommand {
-// TODO: Add your data members public:
 public:
     ChangePromptCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
     virtual ~ChangePromptCommand() = default;
@@ -98,10 +106,6 @@ class ShowPidCommand : public BuiltInCommand {
   virtual ~ShowPidCommand() = default;
   void execute() override;
 };
-
-
-class JobsList;
-
 
 class JobsList {
 public:
@@ -227,7 +231,8 @@ class SmallShell {
         // Instantiated on first use.
         // return instance;
     }
-    ~SmallShell();
+
+    ~SmallShell() = default;
     void executeCommand(const char* cmd_line);
 
     std::string getCurrentPrompt() { return current_prompt; }
