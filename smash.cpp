@@ -6,9 +6,11 @@
 #include "signals.h"
 
 int main(int argc, char* argv[]) {
+
     if(signal(SIGTSTP, ctrlZHandler) == SIG_ERR) {
         perror("smash error: failed to set ctrl-Z handler");
     }
+    /*
     if(signal(SIGINT, ctrlCHandler) == SIG_ERR) {
         perror("smash error: failed to set ctrl-C handler");
     }
@@ -20,7 +22,7 @@ int main(int argc, char* argv[]) {
     if(sigaction(SIGALRM,&sigaction_alarm, nullptr) < 0){
         perror("smash error: failed to set SIGALARM handler");
     }
-
+    */
     SmallShell& smash = SmallShell::getInstance();
     while(true) {
         std::cout << smash.getCurrentPrompt() << "> ";

@@ -86,6 +86,7 @@ static void getCurrentDirectoryName(char* buffer) {
 Command::Command(const char *cmd_line) {
     this->cmd_line = new char[strlen(cmd_line) + 1];
     strcpy(this->cmd_line, cmd_line);
+    _parseCommandLine(cmd_line, args);
 }
 
 Command::~Command() {
@@ -111,12 +112,6 @@ void ShowPidCommand::execute() {
 
 
 void GetCurrDirCommand::execute() {
-    /*
-    SmallShell& shell = SmallShell::getInstance();
-    char buffer[FILENAME_MAX];
-    getcwd(buffer, FILENAME_MAX);
-    */
-
     char buffer[FILENAME_MAX];
     getCurrentDirectoryName(buffer);
     std::cout << buffer << std::endl;
@@ -125,40 +120,48 @@ void GetCurrDirCommand::execute() {
 void ChangeDirCommand::execute() {
     if (this->getArgByIndex(2) != nullptr) {
         std::cerr << "smash error: cd: too many arguments" << std::endl;
+        return;
     }
 
     // there is '-' in the cd command
-    char current_directory[FILENAME_MAX] = {0};
 
     if (strcmp(this->getArgByIndex(1), "-") == 0) {
         // the last working directory was empty
-        if(this->last_directory_path.empty()) {
-            std::cerr << "smash error: cd: OLDPWD not set" << endl;
+        if(*(this->last_directory_path) == nullptr) {
+            std::cerr << "smash error: cd: OLDPWD not set" << std::endl;
+            return;
         }
         //set the current directory to the last one
+
         getCurrentDirectoryName(current_directory);
 
-        if (chdir(this->last_directory_path.c_str()) == -1) {
+        //printf("current in -1: %s\n", current_directory);
+        //printf("last in -1: %s\n", *last_directory_path);
+        if (chdir(*(this->last_directory_path)) == -1) {
             perror("smash error: chdir failed");
+            return;
         }
 
-        last_directory_path = std::string(current_directory);
+        *last_directory_path = current_directory;
+        //printf("last in -2: %s\n", *last_directory_path);
         return;
     }
     else {
         getCurrentDirectoryName(current_directory);
         if (chdir(this->getArgByIndex(1)) == -1) {
             perror("smash error: chdir failed");
+            return;
         }
-
-        last_directory_path = std::string(current_directory);
+        *last_directory_path = current_directory;
+        //strcpy(*last_directory_path, current_directory);
+        //printf("last in else: %s\n", *last_directory_path);
         return;
     }
 }
 
 void JobsList::addJob(Command *cmd, pid_t pid, bool isStopped) {
     removeFinishedJobs();
-    JobEntry* job = new JobEntry(job_counter + 1, pid, isStopped, cmd);
+    JobEntry* job = new JobEntry(job_counter, pid, isStopped, cmd);
     job_counter += 1;
     jobs.push_back(job);
 }
@@ -179,7 +182,7 @@ void JobsList::killAllJobs() {
     }
     if (!jobs.empty()) {
         jobs.clear();
-        //removeFinishedJobs();
+        removeFinishedJobs();
     }
 }
 
@@ -356,7 +359,7 @@ void KillCommand::execute() {
     }
 
     if (this->getArgByIndex(1)) {
-        signalNumber = atoi(this->getArgByIndex(2));
+        signalNumber = atoi(this->getArgByIndex(1));
     }
 
     if (this->getArgByIndex(3) || jobID == -1 || signalNumber == -1 || signalNumber < 1 || signalNumber > 31) {
@@ -428,7 +431,13 @@ void ExternalCommand::execute() {
     }
 }
 
-SmallShell::SmallShell() : smash_pid(getpid()), current_prompt("smash"), last_dir_path(), current_running_jobPID(-1), cuurent_command_line() {}
+void PipeCommand::execute() {
+
+}
+
+
+
+SmallShell::SmallShell() : smash_pid(getpid()), current_prompt("smash"), last_dir_path(nullptr), current_running_jobPID(-1), cuurent_command_line() {}
 
 
 /**
@@ -451,7 +460,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     }
 
     else if (strcmp(args_making[0], CD) == 0) {
-        return new ChangePromptCommand(cmd_line);
+        return new ChangeDirCommand(cmd_line, &last_dir_path);
     }
 
     else if (strcmp(args_making[0], JOBS) == 0) {
@@ -474,6 +483,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         return new KillCommand(cmd_line, &jobs);
     }
 
+    else {
+        bool is_backGround = _isBackgroundComamnd(cmd_line);
+        return new ExternalCommand(cmd_line, &jobs, is_backGround);
+    }
 
 
 

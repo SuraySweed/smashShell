@@ -16,6 +16,10 @@
 #define FG "fg"
 #define BG "bg"
 #define QUIT "quit"
+#define PIPE_TO_STDERROR "|&"
+#define PIPE_TO_STDIN "|"
+#define OUTPUT_APPEND ">>"
+#define OUTPUT_OVERRIDE ">"
 
 class Command {
 private:
@@ -49,19 +53,23 @@ class ExternalCommand : public Command {
     char* external_cmd_line;
 public:
     ExternalCommand(const char* cmd_line, JobsList* jobs, bool is_bg) : Command(cmd_line), jobs(jobs), is_backGround(is_bg) {
-        external_cmd_line = new char[81];
-        strcpy(external_cmd_line, this->getCmdLine());
+        //external_cmd_line = new char[81];
+        //strcpy(external_cmd_line, this->getCmdLine());
+        external_cmd_line = this->getCmdLine();
     }
     virtual ~ExternalCommand() = default;
     void execute() override;
 };
 
+enum pipeType {STDERROR, STDIN};
+
 class PipeCommand : public Command {
-  // TODO: Add your data members
- public:
-  PipeCommand(const char* cmd_line);
-  virtual ~PipeCommand() {}
-  void execute() override;
+private:
+    pipeType std_type;
+public:
+    PipeCommand(const char* cmd_line, pipeType type) : Command(cmd_line), std_type(type) {}
+    virtual ~PipeCommand() = default;
+    void execute() override;
 };
 
 class RedirectionCommand : public Command {
@@ -83,21 +91,22 @@ public:
 
 class ChangeDirCommand : public BuiltInCommand {
 private:
-    std::string last_directory_path;
-
+    char** last_directory_path;
+    char* current_directory;
 public:
-    ChangeDirCommand(const char* cmd_line, char** plastPwd) :
-             BuiltInCommand(cmd_line), last_directory_path(std::string(*plastPwd)) {}
+    ChangeDirCommand(const char* cmd_line, char** plastPwd) : BuiltInCommand(cmd_line), last_directory_path(plastPwd) {
+        current_directory = new char[FILENAME_MAX];
+    }
     virtual ~ChangeDirCommand() = default;
     void execute() override;
 
 };
 
 class GetCurrDirCommand : public BuiltInCommand {
- public:
-  GetCurrDirCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
-  virtual ~GetCurrDirCommand() = default;
-  void execute() override;
+public:
+    GetCurrDirCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
+    virtual ~GetCurrDirCommand() = default;
+    void execute() override;
 };
 
 class ShowPidCommand : public BuiltInCommand {
@@ -212,7 +221,7 @@ class SmallShell {
  private:
     pid_t smash_pid;                    // for show pid
     std::string current_prompt;         // for chprompt
-    std::string last_dir_path;                // for cd
+    char* last_dir_path;                // for cd
     pid_t current_running_jobPID;
     std::string cuurent_command_line;
 
@@ -229,7 +238,7 @@ class SmallShell {
     {
         static SmallShell instance; // Guaranteed to be destroyed.
         // Instantiated on first use.
-        // return instance;
+        return instance;
     }
 
     ~SmallShell() = default;
@@ -241,6 +250,9 @@ class SmallShell {
     pid_t getSmashPID() { return smash_pid; }
     void setCurrentRunningJobPID(pid_t jobPID) { current_running_jobPID = jobPID; }
     void setCurrentCommandLine(std::string cmd_line) { cuurent_command_line = cmd_line; }
+
+    pid_t getCurrentRunningJobPID() { return current_running_jobPID; }
+    std::string getCurrentCmdLine() { return cuurent_command_line; }
 };
 
 #endif //SMASH_COMMAND_H_
