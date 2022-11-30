@@ -16,6 +16,7 @@
 #define FG "fg"
 #define BG "bg"
 #define QUIT "quit"
+#define TIMEOUT "timeout"
 #define PIPE_TO_STDERROR "|&"
 #define PIPE_TO_STDIN "|"
 #define OUTPUT_APPEND ">>"
@@ -25,6 +26,7 @@ class Command {
 private:
     char* cmd_line;
     char* args[COMMAND_MAX_ARGS + 1] = {nullptr}; //[0]- command
+    int arguments_number;
 
 public:
     Command(const char* cmd_line);
@@ -35,6 +37,7 @@ public:
     char* getCmdLine() { return cmd_line; }
     char* getArgByIndex(int i) { return args[i]; }
     char** getCommandArguments() { return args; }
+    int getArgumentsNumber() { return arguments_number; }
 };
 
 class JobsList;
@@ -73,13 +76,22 @@ public:
 };
 
 class RedirectionCommand : public Command {
- // TODO: Add your data members
- public:
-  explicit RedirectionCommand(const char* cmd_line);
-  virtual ~RedirectionCommand() {}
-  void execute() override;
-  //void prepare() override;
-  //void cleanup() override;
+private:
+    std::string current_destination;
+    std::string current_command_line;
+    int dup_stdout;
+    bool is_failed;
+    bool is_output_append;
+
+    void getDataFromRedirection(std::string cmd);
+
+public:
+    explicit RedirectionCommand(const char* cmd_line) : Command(cmd_line), current_destination(), current_command_line(), dup_stdout(-1) {}
+    virtual ~RedirectionCommand() = default;
+    void prepare();
+    void cleanup();
+    void execute() override;
+
 };
 
 class ChangePromptCommand : public BuiltInCommand {
@@ -130,6 +142,9 @@ public:
             pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
         ~JobEntry() = default;
         ////// we have to implemenet operator=
+        bool operator<(const JobsList::JobEntry& job) const { return (this->job_id < job.job_id); }
+        bool operator>(const JobsList::JobEntry& job) const { return (this->job_id > job.job_id); }
+        bool operator==(const JobsList::JobEntry& job) const { return (this->job_id == job.job_id); }
   };
 private:
     std::vector<JobEntry*> jobs;
@@ -141,6 +156,7 @@ public:
     void printJobsList();
     void killAllJobs();
     void removeFinishedJobs();
+    void finishedJobs();
     JobEntry * getJobById(int jobId);
     void removeJobById(int jobId);
     JobEntry * getLastJob(int* lastJobId);
@@ -189,13 +205,59 @@ public:
     void execute() override;
 };
 
+class TimedEntry {
+private:
+    std::string command;
+    pid_t pid;
+    time_t start_time;
+    time_t end_time;
+    int timer;
+    bool is_foreground;
+    bool is_killed;
+
+public:
+    TimedEntry(std::string cmd, pid_t pid, time_t start_time, int timer, bool is_fg) : command(cmd), pid(pid), start_time(start_time),
+            end_time(start_time + timer), timer(timer), is_foreground(is_fg), is_killed(false) {}
+    ~TimedEntry() = default;
+    time_t getEndTime() { return end_time; }
+    pid_t getPid() { return pid; }
+    pid_t setPid(pid_t id) { pid = id; }
+    int getTimer() { return timer; }
+    std::string getCommandLine() { return command; }
+};
+
+class TimedJobs {
+private:
+    std::vector<TimedEntry*> timeouts;
+
+public:
+    TimedJobs() : timeouts() {}
+    ~TimedJobs() = default;
+
+    static bool timeoutEntryIsBigger(TimedEntry* t1, TimedEntry* t2) {
+        if((t1->getEndTime()) >= (t2->getEndTime())) {
+            return false;
+        }
+        return true;
+    }
+    void removeKilledJobs();
+    void modifyJobByID(pid_t job_pid);
+    std::vector<TimedEntry*> getTimeOutsVector() { return timeouts; }
+};
+
+enum TimeOutErrorType {SUCCESS, TOO_FEW_ARGS, TIMEOUT_NUMBER_IS_NOT_INTEGER};
+
 class TimeoutCommand : public BuiltInCommand {
-/* Optional */
-// TODO: Add your data members
- public:
-  explicit TimeoutCommand(const char* cmd_line);
-  virtual ~TimeoutCommand() {}
-  void execute() override;
+    int timer;
+    TimeOutErrorType error_type;
+    std::string command;
+
+    void getDataFromTimeOutCommand(const char* cmd);
+
+public:
+    explicit TimeoutCommand(const char* cmd_line) : BuiltInCommand(cmd_line), timer(0), error_type(SUCCESS), command() {}
+    virtual ~TimeoutCommand() = default;
+    void execute() override;
 };
 
 class FareCommand : public BuiltInCommand {
@@ -224,6 +286,8 @@ class SmallShell {
     char* last_dir_path;                // for cd
     pid_t current_running_jobPID;
     std::string cuurent_command_line;
+    TimedJobs* timed_jobs;
+    bool is_alarmed_job;
 
     SmallShell();
 
@@ -253,6 +317,10 @@ class SmallShell {
 
     pid_t getCurrentRunningJobPID() { return current_running_jobPID; }
     std::string getCurrentCmdLine() { return cuurent_command_line; }
+
+    TimedJobs* getTimedJobs() { return timed_jobs; }
+    bool isAlarmedJobs() { return is_alarmed_job; }
+    void setAlarmedJobs(bool is_alarmed) {is_alarmed_job = is_alarmed; }
 };
 
 #endif //SMASH_COMMAND_H_
