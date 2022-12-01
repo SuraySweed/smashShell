@@ -1,0 +1,7 @@
+./print_args_test.exe 
+./print_args_test.exe arg1
+./print_args_test.exe arg1 arg2
+./print_args_test.exe arg1 arg2 arg3
+./print_args_test.exe arg1 arg2 arg3 arg4
+./print_args_test.exe arg1 arg2 arg3 arg4 arg5 
+quit kill

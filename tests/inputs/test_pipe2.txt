@@ -1,0 +1,5 @@
+echo smash | cat
+echo pid | cat
+echo is | cat
+
+quit

@@ -1,0 +1,16 @@
+echo submitted by Eran
+cd -
+cd dir1 dir2
+cd /fail
+pwd
+cd /home
+pwd
+cd -
+pwd
+cd ..
+pwd
+cd -
+pwd
+cd -
+pwd
+quit

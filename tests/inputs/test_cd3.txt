@@ -1,0 +1,21 @@
+
+pwd
+cd -
+cd dir1
+pwd
+cd - 
+pwd
+cd dir1/dir2
+pwd
+cd -
+pwd
+cd dir1/dir2/dir3
+pwd
+cd -
+pwd
+cd -
+pwd
+cd -
+pwd
+cd ..
+quit

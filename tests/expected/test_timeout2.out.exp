@@ -1,0 +1,7 @@
+smash> smash> smash> smash> [1] timeout 2 sleep 5& : 2 X secs
+[2] timeout 3 sleep 10& : 3 X secs
+smash> smash: got an alarm
+smash: timeout 2 sleep 5& timed out!
+smash: got an alarm
+smash: timeout 3 sleep 10& timed out!
+smash> smash: sending SIGKILL signal to 0 jobs:

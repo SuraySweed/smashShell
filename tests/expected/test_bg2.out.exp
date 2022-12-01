@@ -1,0 +1,24 @@
+smash> submitted by Eran
+smash> smash> smash: got ctrl-Z
+smash: process 2 was stopped
+smash> smash> [1] sleep 100 : 2 X secs (stopped)
+[2] sleep 200& : 3 X secs
+smash> smash> smash> smash> sleep 100 : 2
+smash> [1] sleep 100 : 2 X secs
+[2] sleep 200& : 3 X secs
+smash> smash: got ctrl-Z
+smash: process 4 was stopped
+smash> smash: got ctrl-Z
+smash: process 5 was stopped
+smash> smash> sleep 400 : 5
+smash> [1] sleep 100 : 2 X secs
+[2] sleep 200& : 3 X secs
+[3] sleep 300 : 4 X secs (stopped)
+[4] sleep 400 : 5 X secs
+[5] sleep 500& : 6 X secs
+smash> smash: sending SIGKILL signal to 5 jobs:
+2: sleep 100
+3: sleep 200&
+4: sleep 300
+5: sleep 400
+6: sleep 500&

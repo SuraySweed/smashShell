@@ -1,0 +1,45 @@
+Credits:
+    - Tests were created and tested by Almog Tabo and Nadav Tur
+    - We would like to credit https://github.com/amitaifrey/os1-tests, as we took most of their tests.
+    - We would also like to thank the (only) two people who filled out the google form and submitted tests:
+        Eran (7 tests), GiladF (1 test)
+
+
+Instructions:
+    1. Extract the given zip using Linux unzip command to the folder where your smash binary is located at.
+        There are usually file permission problems when extracting with windows winrar/7zip, so please use Linux.
+    2. From that same folder, run ./tests/runner/runner.sh
+    3. The script should take about 1-2 minutes to run, and after you would get an indicative output.
+
+
+Additional Info:
+    - If you haven't implemented the timeout command, just remove the test inputs with "timeout" in their names.
+    - The test file test_2020_timeout.txt includes some test cases there we were told to not handle, 
+        so you may wanna remove it either way.
+    - If you would like to run a single test, you may run ./tests/runner/runner.sh <test_name>
+    - If you run the "./tests/runner/runner.sh" command inside VSCode, it will open a diff window for every test you failed.
+    - You may see the error "runner: Timeout, killing child" in your .err file - 
+        it means we detected your code got stuck and had to terminate it.
+    - Input files contain ^Z, ^C and ^(digit) lines. These are all instructions for our runner to send to your program.
+        ^Z and ^C will send CTRL+Z/CTRL+C accordingly, and ^(digit) will sleep for <digit> seconds before sending the next command.
+    - Your smash output is being redirected to <test>.out and <test>.err, 
+        then further processed by our python script that removes pids, jobs runtime, and timezone.
+        Pids are replaced by relative pids, which means that they get a unique id according to the order they appeared on the output.
+        After the processing, the original files are removed, and only the .proceesed files remain.
+        To keep them, you may set the env variable KEEP_ORIG to 1. 
+        In that case your command would be "KEEP_ORIG=1 ./tests/runner/runner.sh".
+    - If you're missing a .expected file in the output directory, it means your output was too big. 
+        See the point above to see how to keep the original file.
+    - There is a low chance that the python script that removes pids will replace a command output with a 
+        relative pid as described above. If that happens, try to run ./tests/runner/runner.sh <test_name> again.
+    - The runner.sh script runs several tests at the same time (default: 8). 
+        To change that amount, you may set the env variable TASKS.
+        for example, you may run "TASKS=2 ./tests/runner/runner.sh" to run only two tests at the same time.
+    - The runner.sh script supports running valgrind. (even though they said they won't test it)
+        To use valgrind you need to set the env variable VALGRIND to 1.
+        Example: "VALGRIND=1 ./tests/runner/runner.sh"
+        Sometimes tests that have been passed will timeout when running with valgrind, as it's sometimes too slow.
+        If that happens, try to run "VALGRIND=1 ./tests/runner/runner.sh <test_name>" to individually run only the tests 
+        that failed with valgrind, and hopefully they won't time out.
+
+That's it, good luck!

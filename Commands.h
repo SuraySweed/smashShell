@@ -30,6 +30,7 @@ private:
 
 public:
     Command(const char* cmd_line);
+    Command& operator=(const Command& command);
     virtual ~Command();
     virtual void execute() = 0;
     //virtual void prepare();
@@ -138,17 +139,17 @@ public:
         bool is_stopped;
         Command* command;
 
-        JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID),
-            pid(pid), elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
+        JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID), pid(pid),
+                elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
+        JobEntry& operator=(const JobEntry& job_entry);
         ~JobEntry() = default;
-        ////// we have to implemenet operator=
         bool operator<(const JobsList::JobEntry& job) const { return (this->job_id < job.job_id); }
         bool operator>(const JobsList::JobEntry& job) const { return (this->job_id > job.job_id); }
         bool operator==(const JobsList::JobEntry& job) const { return (this->job_id == job.job_id); }
   };
 private:
     std::vector<JobEntry*> jobs;
-    int job_counter = 1;
+    int job_counter = 0; // equal to job max id
 public:
     JobsList() = default;
     ~JobsList() = default;
@@ -159,6 +160,7 @@ public:
     void finishedJobs();
     JobEntry * getJobById(int jobId);
     void removeJobById(int jobId);
+    int getMaxJobID();
     JobEntry * getLastJob(int* lastJobId);
     JobEntry *getLastStoppedJob(int *jobId);
     std::vector<JobEntry*> getJobs() { return jobs; }
@@ -191,6 +193,8 @@ public:
 
 class QuitCommand : public BuiltInCommand {
     JobsList* jobs;
+    static bool PtrSort(JobsList::JobEntry* job1, JobsList::JobEntry* job2) { return (*job1 < *job2); }
+
 public:
     QuitCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
     virtual ~QuitCommand() = default;

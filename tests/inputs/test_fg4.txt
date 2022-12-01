@@ -1,0 +1,20 @@
+echo submitted by Eran
+fg
+fg 1
+sleep 100&
+sleep 200&
+fg 2 5
+fg 2
+^1
+^Z
+jobs
+fg 1
+^1
+^C
+jobs
+sleep 300&
+fg
+^1
+^Z
+jobs
+quit kill

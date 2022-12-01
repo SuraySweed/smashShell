@@ -1,0 +1,4 @@
+smash error: bg: invalid arguments
+smash error: bg: job-id -1 does not exist
+smash error: bg: there is no stopped jobs to resume
+smash error: bg: job-id 500 does not exist

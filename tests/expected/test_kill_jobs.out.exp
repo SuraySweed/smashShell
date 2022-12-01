@@ -1,0 +1,18 @@
+smash> submitted by Eran
+smash> smash> smash> smash> [1] ./printSignals.exe & : 2 X secs
+[2] sleep 200& : 3 X secs
+[3] sleep 300& : 4 X secs
+smash> signal number 9 was sent to pid 3
+smash> smash> [1] ./printSignals.exe & : 2 X secs
+[3] sleep 300& : 4 X secs
+[4] sleep 400& : 5 X secs
+smash> smash> smash> smash> smash> smash> signal number 9 was sent to pid 5
+smash> signal number 5 was sent to pid 2
+smash> received signal number: 5
+smash> [1] ./printSignals.exe & : 2 X secs
+[3] sleep 300& : 4 X secs
+[4] sleep 500& : 6 X secs
+smash> smash: sending SIGKILL signal to 3 jobs:
+2: ./printSignals.exe &
+4: sleep 300&
+6: sleep 500&

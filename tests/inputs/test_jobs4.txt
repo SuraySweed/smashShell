@@ -1,0 +1,7 @@
+sleep 1&
+^2
+jobs
+sleep 1&
+^2
+jobs
+quit kill

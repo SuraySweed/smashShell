@@ -1,0 +1,21 @@
+sleep 100&
+sleep 200&
+sleep 300&
+sleep 400&
+sleep 500&
+fg 3
+^C
+jobs
+fg 1
+^C
+jobs
+fg 2
+^C
+jobs
+fg
+^C
+jobs
+fg
+^C
+jobs
+quit kill

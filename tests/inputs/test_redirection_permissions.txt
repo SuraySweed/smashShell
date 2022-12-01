@@ -1,0 +1,9 @@
+echo abc > a.txt
+stat -c "%A" a.txt
+echo abc >> a.txt
+stat -c "%A" a.txt
+echo abc >> b.txt
+stat -c "%A" b.txt
+echo abc >> b.txt
+stat -c "%A" b.txt
+quit

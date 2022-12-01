@@ -1,0 +1,23 @@
+cd -
+cd .. ..
+cd bla
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd ..
+cd /bin
+cd -
+cd usr
+cd bin
+cd /tmp/
+cd asgsagasgasgasg
+cd /asgasgasgasggs
+cd -
+cd -
+quit

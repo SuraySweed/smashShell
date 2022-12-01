@@ -93,10 +93,21 @@ Command::Command(const char *cmd_line) {
     arguments_number = _parseCommandLine(cmd_line, args);
 }
 
+Command &Command::operator=(const Command &command) {
+    if (this == &command) {
+        return *this;
+    }
+
+    cmd_line = new char[strlen(command.cmd_line) + 1];
+    strcpy(this->cmd_line, command.cmd_line);
+    arguments_number = _parseCommandLine(cmd_line, args);
+
+    return *this;
+}
+
 Command::~Command() {
     delete[] cmd_line;
 }
-
 
 void ChangePromptCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
@@ -163,38 +174,59 @@ void ChangeDirCommand::execute() {
     }
 }
 
+JobsList::JobEntry &JobsList::JobEntry::operator=(const JobsList::JobEntry &job_entry) {
+    if (this == &job_entry) {
+        return *this;
+    }
+
+    job_id = job_entry.job_id;
+    pid = job_entry.pid;
+    elapsed_time = job_entry.elapsed_time;
+    is_stopped = job_entry.is_stopped;
+    command = job_entry.command;
+
+    return *this;
+}
+
+
 void JobsList::addJob(Command *cmd, pid_t pid, bool isStopped) {
     removeFinishedJobs();
-    JobEntry* job = new JobEntry(job_counter, pid, isStopped, cmd);
-    job_counter += 1;
+    JobEntry* job = new JobEntry(getMaxJobID() + 1, pid, isStopped, cmd);
     jobs.push_back(job);
 }
 
 void JobsList::printJobsList() {
     for (JobEntry* job:jobs) {
-        std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
-        (int) difftime(time(nullptr), job->elapsed_time) << " secs " << (job->is_stopped ? "(stopped)" : "") << std::endl;
+        if (job->is_stopped) {
+            std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
+            (int) difftime(time(nullptr), job->elapsed_time) << " secs (stopped)" << std::endl;
+        }
+        else {
+            std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
+                      (int) difftime(time(nullptr), job->elapsed_time) << " secs" << std::endl;
+        }
     }
 }
 
 void JobsList::killAllJobs() {
     removeFinishedJobs();
     for (JobEntry* job:jobs) {
-        if (kill(job->pid, SIGKILL) < 0) {
+        if (kill(job->pid, SIGKILL) == -1) {
             perror("smash error: kill failed");
+            return;
         }
     }
     if (!jobs.empty()) {
         jobs.clear();
-        removeFinishedJobs();
     }
+    removeFinishedJobs();
 }
 
 void JobsList::removeFinishedJobs() {
     int index = 0;
     for (JobEntry* job:jobs) {
-        int res = waitpid(job->pid, nullptr, WNOHANG);
-        if (res != 0) {
+        int waitResult = waitpid(job->pid, nullptr, WNOHANG);
+        if (waitResult != 0) {
             jobs.erase(jobs.begin() + index);
         }
         index++;
@@ -214,11 +246,11 @@ void JobsList::finishedJobs() {
         return;
     }
 
-    for(unsigned int i = 0; i < jobs.size(); i++){
-        JobsList::JobEntry* j = jobs[i];
-        int waitStatus = waitpid(j->pid, nullptr,WNOHANG);
+    for(unsigned int i = 0; i < jobs.size(); i++) {
+        JobsList::JobEntry* job = jobs[i];
+        int waitStatus = waitpid(job->pid, nullptr,WNOHANG);
         if(waitStatus != 0) {
-            jobs.erase(jobs.begin()+i);
+            jobs.erase(jobs.begin() + i);
         }
     }
 
@@ -248,18 +280,36 @@ void JobsList::removeJobById(int jobId) {
     }
 }
 
+int JobsList::getMaxJobID() {
+    int maxID = 0;
+    for (JobEntry* job:jobs) {
+        if (job->job_id > maxID) {
+            maxID = job->job_id;
+        }
+    }
+
+    return maxID;
+}
+
 JobsList::JobEntry *JobsList::getLastJob(int *lastJobId) {
     if (jobs.empty() || !lastJobId) {
         return nullptr;
     }
-    //removeFInshiedJobs..
-    *lastJobId = job_counter;
-    return getJobById(job_counter);
+    *lastJobId = getMaxJobID();
+    return getJobById(*lastJobId);
 }
 
-// ask for this function, compare with time or with ID
 JobsList::JobEntry *JobsList::getLastStoppedJob(int *jobId) {
-    return nullptr;
+    int index = 0, maxID = 0;
+    JobEntry* lastStoppedJob = nullptr;
+    for (JobEntry* job:jobs) {
+        if ((job->job_id > maxID) && job->is_stopped) {
+            maxID = job->job_id;
+            lastStoppedJob = job;
+        }
+    }
+    *jobId = maxID;
+    return lastStoppedJob;
 }
 
 void JobsCommand::execute() {
@@ -313,7 +363,6 @@ void ForegroundCommand::execute() {
     std::cout << job->command->getCmdLine() << " : " << job->pid << std::endl;
     shell.setCurrentRunningJobPID(job->pid);
     shell.setCurrentCommandLine(std::string(job->command->getCmdLine()));
-
 
     int status = 0;
     int waitPID_result = waitpid(job->pid, &status, WUNTRACED);
@@ -376,6 +425,9 @@ void BackgroundCommand::execute() {
 void QuitCommand::execute() {
     if (this->getArgByIndex(1) && (strcmp(this->getArgByIndex(1), KILL) == 0)) {
         std::cout << "smash: sending SIGKILL signal to " << jobs->getJobs().size() << " jobs:" << endl;
+        if (!jobs->getJobs().empty()) {
+            std::sort(jobs->getJobs().begin(), jobs->getJobs().end(), PtrSort);
+        }
         for (JobsList::JobEntry* job:jobs->getJobs()) {
             std::cout << job->pid << " : " << job->command->getCmdLine() << std::endl;
         }
@@ -476,11 +528,11 @@ void PipeCommand::execute() {
         return;
     }
 
-    pid_t child1 = fork();
+    pid_t child1;
     pid_t child2;
     std::string command_line;
 
-    if (child1 == 0) {
+    if ((child1 = fork()) == 0) {
         setpgrp();
         if (close(fd_pipe[1]) == -1) {
             std::perror("smash error: close failed");
@@ -912,3 +964,4 @@ void SmallShell::executeCommand(const char *cmd_line) {
     current_running_jobPID = -1;
     jobs.removeFinishedJobs();
 }
+

@@ -1,0 +1,14 @@
+pwd
+cd dir1
+pwd
+cd -
+pwd
+cd -
+pwd
+cd no_such_folder
+pwd
+cd -
+pwd
+cd -
+pwd
+quit

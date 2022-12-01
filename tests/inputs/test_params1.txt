@@ -1,0 +1,10 @@
+echo submitted by Eran
+chprompt Two Words
+chprompt Name1
+chprompt Name2
+showpid
+showpid param1 
+pwd
+pwd param1 
+chprompt
+quit

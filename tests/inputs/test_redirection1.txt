@@ -1,0 +1,3 @@
+showpid > test_redirection1.tmp
+cat test_redirection1.tmp
+quit kill

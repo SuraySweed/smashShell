@@ -1,0 +1,4 @@
+sleep 5&
+^1
+sleep 5
+quit kill

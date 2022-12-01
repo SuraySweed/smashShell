@@ -1,0 +1,60 @@
+kill 9 1
+kill -9 -1
+kill -9 abc
+kill -9 1
+kill -abc 1
+kill abc abc
+kill -abc abc
+sleep 100&
+kill -9 abc
+kill -abc 1
+kill abc abc
+kill -abc abc
+kill 9 1
+kill -9 1
+^2
+kill -9 1
+jobs
+sleep 7&
+^1
+kill -90 1
+jobs
+sleep 5&
+jobs
+sleep 3&
+^1
+jobs 5
+kill -not_a_number 1
+kill -9 1 2 3
+^9
+jobs
+sleep 10 &
+^3
+jobs
+kill -9 1
+^1
+jobs junk_argument
+sleep 5&
+^1
+          sleep        10   &
+^1
+sleep 15
+^1
+^Z
+jobs
+kill -9 1
+^1
+jobs
+kill -9 2
+^1
+jobs
+kill -9 3
+^1
+jobs
+sleep 20&
+sleep 10
+^2
+^C
+kill -9 1
+^1
+quit kill

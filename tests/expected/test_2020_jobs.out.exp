@@ -1,0 +1,379 @@
+smash> smash> smash> smash> smash> smash> smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[3] sleep 300& : 4 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+smash> smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[3] sleep 300& : 4 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+smash> signal number 9 was sent to pid 4
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1000& : 11 X secs
+smash> signal number 9 was sent to pid 11
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs
+smash> sleep 1001& : 12
+smash: got ctrl-Z
+smash: process 12 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+smash> sleep 1001& : 12
+smash: got ctrl-Z
+smash: process 12 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+smash> sleep 1001& : 12
+smash: got ctrl-Z
+smash: process 12 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+smash> sleep 1001& : 12
+smash: got ctrl-Z
+smash: process 12 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+smash> smash: got ctrl-C
+[1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+smash> smash: got ctrl-Z
+smash: process 13 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[11] sleep 1002 : 13 X secs (stopped)
+smash> sleep 1002 : 13
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[11] sleep 1002 : 13 X secs
+smash> smash: got ctrl-C
+smash: process 14 was killed
+smash> smash> smash: got ctrl-C
+smash: got ctrl-C
+smash: got ctrl-Z
+smash: got ctrl-Z
+[1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[11] sleep 1002 : 13 X secs
+smash> smash: got ctrl-Z
+smash: process 15 was stopped
+smash> smash: got ctrl-Z
+smash: process 16 was stopped
+smash> smash: got ctrl-Z
+smash: process 17 was stopped
+smash> sleep 1100 : 15
+smash: got ctrl-Z
+smash: process 15 was stopped
+smash> sleep 1100 : 15
+smash: got ctrl-Z
+smash: process 15 was stopped
+smash> sleep 1100 : 15
+smash: got ctrl-Z
+smash: process 15 was stopped
+smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[11] sleep 1002 : 13 X secs
+[12] sleep 1100 : 15 X secs (stopped)
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> sleep 1002 : 13
+smash: got ctrl-Z
+smash: process 13 was stopped
+smash> sleep 1002 : 13
+smash: got ctrl-C
+smash: process 13 was killed
+smash> smash> smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs (stopped)
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> sleep 1100 : 15
+smash> smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> smash> smash> [1] sleep 100& : 2 X secs
+[2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> signal number 9 was sent to pid 2
+smash> smash> [2] sleep 200& : 3 X secs
+[4] sleep 400& : 5 X secs
+[5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> signal number 9 was sent to pid 3
+smash> signal number 9 was sent to pid 5
+smash> smash> smash> smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+[15] sleep 3& : 18 X secs
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> sleep 1200 : 17
+smash: got ctrl-Z
+smash: process 17 was stopped
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> sleep 1200 : 17
+smash: got ctrl-Z
+smash: process 17 was stopped
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> sleep 1200 : 17
+smash: got ctrl-Z
+smash: process 17 was stopped
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+smash> smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+[15] sleep 777& : 19 X secs
+smash> smash: got ctrl-C
+smash: process 20 was killed
+smash> smash: got ctrl-Z
+smash: process 21 was stopped
+smash> sleep 888 : 21
+smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+[15] sleep 777& : 19 X secs
+[16] sleep 888 : 21 X secs
+smash> smash> [5] sleep 500& : 6 X secs
+[6] sleep 600& : 7 X secs
+[7] sleep 700& : 8 X secs
+[8] sleep 800& : 9 X secs
+[9] sleep 900& : 10 X secs
+[10] sleep 1001& : 12 X secs (stopped)
+[12] sleep 1100 : 15 X secs
+[13] sleep 1200 : 16 X secs (stopped)
+[14] sleep 1200 : 17 X secs (stopped)
+[15] sleep 777& : 19 X secs
+[16] sleep 888 : 21 X secs
+[17] sleep 100& : 22 X secs
+smash> sleep 100& : 22
+smash: got ctrl-Z
+smash: process 22 was stopped
+smash> smash: sending SIGKILL signal to 12 jobs:
+6: sleep 500&
+7: sleep 600&
+8: sleep 700&
+9: sleep 800&
+10: sleep 900&
+12: sleep 1001&
+15: sleep 1100
+16: sleep 1200
+17: sleep 1200
+19: sleep 777&
+21: sleep 888
+22: sleep 100&

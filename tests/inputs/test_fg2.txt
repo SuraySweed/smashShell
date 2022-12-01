@@ -1,0 +1,16 @@
+sleep 100&
+sleep 200&
+sleep 300&
+sleep 400&
+sleep 500&
+fg 3
+^C
+fg 1
+^C
+fg 2
+^C
+fg 4
+^C
+fg
+^C
+quit kill

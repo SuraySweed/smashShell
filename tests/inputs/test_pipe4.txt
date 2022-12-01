@@ -1,0 +1,4 @@
+./echo_stderr.sh should_not_be_filtered | true
+./echo_stderr.sh should_be_filtered |& true
+
+quit

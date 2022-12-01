@@ -1,0 +1,9 @@
+jobs
+sleep 10&
+jobs
+sleep 20&
+jobs
+sleep 30&
+sleep 40&
+jobs
+quit kill

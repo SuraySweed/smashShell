@@ -1,0 +1,7 @@
+smash error: fg: job-id 1 does not exist
+smash error: fg: jobs list is empty
+smash error: fg: job-id -1 does not exist
+smash error: fg: invalid arguments
+smash error: fg: job-id 1 does not exist
+terminate called after throwing an instance of 'std::invalid_argument'
+  what():  stoi
