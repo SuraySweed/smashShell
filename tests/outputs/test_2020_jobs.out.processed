@@ -153,9 +153,8 @@ smash> [1] sleep 100& : 2 X secs
 [13] sleep 1001& : 12 X secs (stopped)
 [14] sleep 1001& : 12 X secs (stopped)
 [15] sleep 1002 : 13 X secs
-smash> smash: got ctrl-C
-smash: process 14 was killed
 smash> smash> smash: got ctrl-C
+smash> smash: got ctrl-C
 smash: got ctrl-C
 smash: got ctrl-Z
 smash: got ctrl-Z
@@ -174,11 +173,11 @@ smash: got ctrl-Z
 [14] sleep 1001& : 12 X secs (stopped)
 [15] sleep 1002 : 13 X secs
 smash> smash: got ctrl-Z
+smash: process 14 was stopped
+smash> smash: got ctrl-Z
 smash: process 15 was stopped
 smash> smash: got ctrl-Z
 smash: process 16 was stopped
-smash> smash: got ctrl-Z
-smash: process 17 was stopped
 smash> sleep 1001& : 12
 smash: got ctrl-Z
 smash: process 12 was stopped
@@ -202,9 +201,9 @@ smash> [1] sleep 100& : 2 X secs
 [13] sleep 1001& : 12 X secs (stopped)
 [14] sleep 1001& : 12 X secs (stopped)
 [15] sleep 1002 : 13 X secs
-[16] sleep 1100 : 15 X secs (stopped)
-[17] sleep 1200 : 16 X secs (stopped)
-[18] sleep 1200 : 17 X secs (stopped)
+[16] sleep 1100 : 14 X secs (stopped)
+[17] sleep 1200 : 15 X secs (stopped)
+[18] sleep 1200 : 16 X secs (stopped)
 [19] sleep 1001& : 12 X secs (stopped)
 [20] sleep 1001& : 12 X secs (stopped)
 [21] sleep 1001& : 12 X secs (stopped)

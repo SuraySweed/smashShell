@@ -30,6 +30,7 @@ private:
 
 public:
     Command(const char* cmd_line);
+    Command(const Command& other);
     Command& operator=(const Command& command);
     virtual ~Command();
     virtual void execute() = 0;
@@ -142,6 +143,7 @@ public:
         JobEntry(int jobID, pid_t pid, bool isStopped, Command* cmd) : job_id(jobID), pid(pid),
                 elapsed_time(time(nullptr)), is_stopped(isStopped), command(cmd) {}
         JobEntry& operator=(const JobEntry& job_entry);
+        JobEntry(const JobEntry& other) = default;
         ~JobEntry() = default;
         bool operator<(const JobsList::JobEntry& job) const { return (this->job_id < job.job_id); }
         bool operator>(const JobsList::JobEntry& job) const { return (this->job_id > job.job_id); }
@@ -152,6 +154,7 @@ private:
     int job_counter = 0; // equal to job max id
 public:
     JobsList() = default;
+    JobsList(const JobsList& other) = default;
     ~JobsList() = default;
     void addJob(Command* cmd, pid_t pid, bool isStopped);
     void printJobsList();
@@ -193,7 +196,7 @@ public:
 
 class QuitCommand : public BuiltInCommand {
     JobsList* jobs;
-    static bool PtrSort(JobsList::JobEntry* job1, JobsList::JobEntry* job2) { return (*job1 < *job2); }
+    //static bool PtrSort(JobsList::JobEntry* job1, JobsList::JobEntry* job2) { return (*job1 < *job2); }
 
 public:
     QuitCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line), jobs(jobs) {}
@@ -231,11 +234,10 @@ public:
 };
 
 class TimedJobs {
-private:
+public:
     std::vector<TimedEntry*> timeouts;
 
-public:
-    TimedJobs() : timeouts() {}
+    TimedJobs() = default;
     ~TimedJobs() = default;
 
     static bool timeoutEntryIsBigger(TimedEntry* t1, TimedEntry* t2) {
@@ -246,7 +248,7 @@ public:
     }
     void removeKilledJobs();
     void modifyJobByID(pid_t job_pid);
-    std::vector<TimedEntry*> getTimeOutsVector() { return timeouts; }
+    //std::vector<TimedEntry*> getTimeOutsVector() { return timeouts; }
 };
 
 enum TimeOutErrorType {SUCCESS, TOO_FEW_ARGS, TIMEOUT_NUMBER_IS_NOT_INTEGER};
@@ -290,7 +292,6 @@ class SmallShell {
     char* last_dir_path;                // for cd
     pid_t current_running_jobPID;
     std::string cuurent_command_line;
-    TimedJobs* timed_jobs;
     bool is_alarmed_job;
 
     SmallShell();
@@ -298,6 +299,7 @@ class SmallShell {
  public:
 
     JobsList jobs;
+    TimedJobs* timed_jobs;
 
     Command *CreateCommand(const char* cmd_line);
     SmallShell(SmallShell const&)      = delete; // disable copy ctor
@@ -322,7 +324,7 @@ class SmallShell {
     pid_t getCurrentRunningJobPID() { return current_running_jobPID; }
     std::string getCurrentCmdLine() { return cuurent_command_line; }
 
-    TimedJobs* getTimedJobs() { return timed_jobs; }
+    //TimedJobs* getTimedJobs() { return timed_jobs; }
     bool isAlarmedJobs() { return is_alarmed_job; }
     void setAlarmedJobs(bool is_alarmed) {is_alarmed_job = is_alarmed; }
 };

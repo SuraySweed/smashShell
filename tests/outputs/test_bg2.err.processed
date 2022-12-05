@@ -1,5 +1,2 @@
 smash error: bg: there is no stopped jobs to resume
-smash error: bg: job-id 2 is already running in the background
-smash error: bg: job-id 3 does not exist
-smash error: bg: invalid arguments
-smash error: bg: job-id 1 is already running in the background
+runner: Timeout, killing child

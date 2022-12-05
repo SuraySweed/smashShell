@@ -51,7 +51,7 @@ void ctrlCHandler(int sig_num) {
 void alarmHandler(int sig_num) {
     SmallShell& shell = SmallShell::getInstance();
     cout << "smash: got an alarm" << endl;
-    TimedEntry* job_to_kill = shell.getTimedJobs()->getTimeOutsVector()[0];
+    TimedEntry* job_to_kill = shell.timed_jobs->timeouts[0];
     if(job_to_kill == nullptr) {
         cout << "is null" << endl;
     }
@@ -62,12 +62,12 @@ void alarmHandler(int sig_num) {
         perror("smash error: killpg failed");
     }
     cout << "smash: timeout " << job_to_kill->getTimer() << " " << job_to_kill->getCommandLine() << " timed out!" << endl;
-    shell.getTimedJobs()->removeKilledJobs();
+    shell.timed_jobs->removeKilledJobs();
     shell.jobs.finishedJobs();
-    if(shell.getTimedJobs()->getTimeOutsVector().empty()) {
+    if(shell.timed_jobs->timeouts.empty()) {
         return;
     }
-    TimedEntry* curr_alarmed_job = shell.getTimedJobs()->getTimeOutsVector()[0];
+    TimedEntry* curr_alarmed_job = shell.timed_jobs->timeouts[0];
     time_t curr_alarm = curr_alarmed_job->getEndTime();
     alarm(curr_alarm-time(nullptr));
 }

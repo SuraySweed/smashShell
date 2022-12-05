@@ -87,10 +87,18 @@ static void getCurrentDirectoryName(char* buffer) {
     getcwd(buffer, FILENAME_MAX);
 }
 
+static bool PtrSort(JobsList::JobEntry* job1, JobsList::JobEntry* job2) { return (*job1 < *job2); }
+
 Command::Command(const char *cmd_line) {
     this->cmd_line = new char[strlen(cmd_line) + 1];
     strcpy(this->cmd_line, cmd_line);
     arguments_number = _parseCommandLine(cmd_line, args);
+}
+
+Command::Command(const Command &other) {
+    cmd_line = new char[strlen(other.cmd_line) + 1];
+    strcpy(cmd_line, other.cmd_line);
+    arguments_number = _parseCommandLine(other.cmd_line, args);
 }
 
 Command &Command::operator=(const Command &command) {
@@ -196,6 +204,7 @@ void JobsList::addJob(Command *cmd, pid_t pid, bool isStopped) {
 }
 
 void JobsList::printJobsList() {
+    std::sort(jobs.begin(), jobs.end(), PtrSort);
     for (JobEntry* job:jobs) {
         if (job->is_stopped) {
             std::cout << "[" << job->job_id << "] " << job->command->getCmdLine() << " : " << job->pid << " " <<
@@ -426,10 +435,10 @@ void QuitCommand::execute() {
     if (this->getArgByIndex(1) && (strcmp(this->getArgByIndex(1), KILL) == 0)) {
         std::cout << "smash: sending SIGKILL signal to " << jobs->getJobs().size() << " jobs:" << endl;
         if (!jobs->getJobs().empty()) {
-            std::sort(jobs->getJobs().begin(), jobs->getJobs().end(), PtrSort);
+            //std::sort(jobs->getJobs().begin(), jobs->getJobs().end(), PtrSort);
         }
         for (JobsList::JobEntry* job:jobs->getJobs()) {
-            std::cout << job->pid << " : " << job->command->getCmdLine() << std::endl;
+            std::cout << job->pid << ": " << job->command->getCmdLine() << std::endl;
         }
         this->jobs->killAllJobs();
     }
@@ -545,7 +554,7 @@ void PipeCommand::execute() {
         }
 
         if (dup2(fd_pipe[0],0) == -1){
-            perror("smash error: dup2 failed");
+            std::perror("smash error: dup2 failed");
             return;
         }
 
@@ -617,7 +626,7 @@ void PipeCommand::execute() {
         cmd->execute();
         delete cmd;
 
-        if (std_type == STDERROR){
+        if (std_type == STDERROR) {
             if (dup2(stdout_error_fd, 2) == -1) {
                 std::perror("smash error: dup2 failed");
                 return;
@@ -777,13 +786,13 @@ void TimedJobs::removeKilledJobs() {
         return;
     }
 
-    for(unsigned int i = 0; i < shell.getTimedJobs()->timeouts.size(); i++){
-        TimedEntry* timedEntry = shell.getTimedJobs()->timeouts[i];
+    for(unsigned int i = 0; i < shell.timed_jobs->timeouts.size(); i++){
+        TimedEntry* timedEntry = shell.timed_jobs->timeouts[i];
         time_t curr_time = time(nullptr);
 
         if(timedEntry->getEndTime() <= curr_time) {
-            delete shell.getTimedJobs()->timeouts[i];
-            shell.getTimedJobs()->timeouts.erase(shell.getTimedJobs()->timeouts.begin() + i);
+            delete shell.timed_jobs->timeouts[i];
+            shell.timed_jobs->timeouts.erase(shell.timed_jobs->timeouts.begin() + i);
         }
     }
     shell.jobs.finishedJobs();
@@ -791,7 +800,12 @@ void TimedJobs::removeKilledJobs() {
 
 void TimedJobs::modifyJobByID(pid_t job_pid) {
     int timed_jobs_number = timeouts.size();
-    timeouts[timed_jobs_number -1 ]->setPid(job_pid);
+    if (timed_jobs_number >= 1) {
+        timeouts[timed_jobs_number -1]->setPid(job_pid);
+    }
+    else {
+        timeouts[timed_jobs_number]->setPid(job_pid); //timeouts[0] = ....
+    }
     std::sort(timeouts.begin(), timeouts.end(), timeoutEntryIsBigger);
 }
 
@@ -806,6 +820,7 @@ void TimeoutCommand::getDataFromTimeOutCommand(const char *cmd) {
     }
 
     std::string timeoutDuration = string(this->getArgByIndex(1));
+
     for (unsigned int index = 0; index < timeoutDuration.size(); index++) {
         if (timeoutDuration[index] < '0' || timeoutDuration[index] > '9') {
             error_type = TIMEOUT_NUMBER_IS_NOT_INTEGER;
@@ -836,7 +851,7 @@ void TimeoutCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     TimedEntry* current_timed_out = new TimedEntry(command, -1, time(nullptr), timer, false);
 
-    shell.getTimedJobs()->getTimeOutsVector().push_back(current_timed_out);
+    shell.timed_jobs->timeouts.push_back(current_timed_out);
     shell.setAlarmedJobs(true);
 
     char cmd_with_not_bg[COMMAND_ARGS_MAX_LENGTH];
@@ -858,15 +873,15 @@ void TimeoutCommand::execute() {
     else {
         if(shell.getSmashPID() == getpid()) {
             shell.setAlarmedJobs(true);
-            shell.getTimedJobs()->modifyJobByID(pid);
+            shell.timed_jobs->modifyJobByID(pid);
             time_t current_time = time(nullptr);
-            TimedEntry* alarm_entry = shell.getTimedJobs()->getTimeOutsVector()[0];
+            TimedEntry* alarm_entry = shell.timed_jobs->timeouts[0];
             time_t end_time = alarm_entry->getEndTime();
             unsigned int seconds = end_time - current_time;
             alarm(seconds);
 
             if (is_bg) {
-                shell.jobs.addJob(this,pid,false);
+                shell.jobs.addJob(this, pid, false);
             }
             else {
                 if(waitpid(pid, nullptr,WUNTRACED) == -1) {
@@ -896,15 +911,16 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     _parseCommandLine(cmd_line, args_making);
 
     std::string string_cmd_line = string(cmd_line);
+    if (string_cmd_line.empty()) { return nullptr; }
 
     if((string_cmd_line.find(OUTPUT_OVERRIDE)) != string::npos) {
         return new RedirectionCommand(cmd_line);
     }
     else if(string_cmd_line.find(PIPE_TO_STDERROR) != string::npos) {
-        return new PipeCommand(cmd_line, STDIN);
+        return new PipeCommand(cmd_line, STDERROR);
     }
     else if(string_cmd_line.find(PIPE_TO_STDIN) != string::npos){
-        return new PipeCommand(cmd_line, STDERROR);
+        return new PipeCommand(cmd_line, STDIN);
     }
 
     else if (strcmp(args_making[0], CHPROMPT) == 0) {
