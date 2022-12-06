@@ -155,6 +155,7 @@ private:
 public:
     JobsList() = default;
     JobsList(const JobsList& other) = default;
+    JobsList& operator=(const JobsList& job_list) = default;
     ~JobsList() = default;
     void addJob(Command* cmd, pid_t pid, bool isStopped);
     void printJobsList();
@@ -162,6 +163,7 @@ public:
     void removeFinishedJobs();
     void finishedJobs();
     JobEntry * getJobById(int jobId);
+    JobEntry * getJobByPID(int jobPID);
     void removeJobById(int jobId);
     int getMaxJobID();
     JobEntry * getLastJob(int* lastJobId);
@@ -262,6 +264,7 @@ class TimeoutCommand : public BuiltInCommand {
 
 public:
     explicit TimeoutCommand(const char* cmd_line) : BuiltInCommand(cmd_line), timer(0), error_type(SUCCESS), command() {}
+    TimeoutCommand(const TimeoutCommand& other) = default;
     virtual ~TimeoutCommand() = default;
     void execute() override;
 };

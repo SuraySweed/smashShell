@@ -17,8 +17,8 @@ smash> sleep 300 : 4
 smash> sleep 400 : 5
 smash> sleep 200 : 3
 smash> sleep 500 : 6
-smash> sleep 500 : 6
-smash> [1] sleep 100 : 2 X secs (stopped)
+smash> sleep 100 : 2
+smash> [1] sleep 100 : 2 X secs
 [2] sleep 200 : 3 X secs
 [3] sleep 300 : 4 X secs
 [4] sleep 400 : 5 X secs

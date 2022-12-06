@@ -17,7 +17,7 @@ void ctrlZHandler(int sig_num) {
             return;
         }
 
-        JobsList::JobEntry* currentJob = shell.jobs.getJobById(shell.getCurrentRunningJobPID());
+        JobsList::JobEntry* currentJob = shell.jobs.getJobByPID(shell.getCurrentRunningJobPID());
         if(currentJob) {
             currentJob->is_stopped = true;
             currentJob->elapsed_time = time(nullptr);

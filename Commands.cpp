@@ -87,6 +87,16 @@ static void getCurrentDirectoryName(char* buffer) {
     getcwd(buffer, FILENAME_MAX);
 }
 
+static bool isStringNumber(const string& str)
+{
+    for (char const &ch : str) {
+        if (std::isdigit(ch) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool PtrSort(JobsList::JobEntry* job1, JobsList::JobEntry* job2) { return (*job1 < *job2); }
 
 Command::Command(const char *cmd_line) {
@@ -147,7 +157,6 @@ void ChangeDirCommand::execute() {
     }
 
     // there is '-' in the cd command
-
     if (strcmp(this->getArgByIndex(1), "-") == 0) {
         // the last working directory was empty
         if(*(this->last_directory_path) == nullptr) {
@@ -158,15 +167,12 @@ void ChangeDirCommand::execute() {
 
         getCurrentDirectoryName(current_directory);
 
-        //printf("current in -1: %s\n", current_directory);
-        //printf("last in -1: %s\n", *last_directory_path);
         if (chdir(*(this->last_directory_path)) == -1) {
             perror("smash error: chdir failed");
             return;
         }
 
         *last_directory_path = current_directory;
-        //printf("last in -2: %s\n", *last_directory_path);
         return;
     }
     else {
@@ -176,8 +182,6 @@ void ChangeDirCommand::execute() {
             return;
         }
         *last_directory_path = current_directory;
-        //strcpy(*last_directory_path, current_directory);
-        //printf("last in else: %s\n", *last_directory_path);
         return;
     }
 }
@@ -280,6 +284,15 @@ JobsList::JobEntry *JobsList::getJobById(int jobId) {
     return nullptr;
 }
 
+JobsList::JobEntry *JobsList::getJobByPID(int jobPID) {
+    for (JobEntry* job:jobs) {
+        if (job->pid == jobPID) {
+            return job;
+        }
+    }
+    return nullptr;
+}
+
 void JobsList::removeJobById(int jobId) {
     for (auto it = jobs.begin(); it != jobs.end(); it++) {
         if ((*it)->job_id == jobId) {
@@ -331,14 +344,28 @@ void ForegroundCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     if (this->getArgByIndex(2) != nullptr) {
         std::cerr << "smash error: fg: invalid arguments" << std::endl;
+        return;
     }
 
     JobsList::JobEntry* job = nullptr;
     if (this->getArgByIndex(1) != nullptr) {
         std::string jobID_argument = this->getArgByIndex(1);
-        int job_id = std::stoi(jobID_argument); // convert argument string ti intger
+
+        if (jobID_argument[0] == '-') {
+            std::string str_temp = jobID_argument.substr(1, jobID_argument.size() - 1);
+            if (!isStringNumber(str_temp)) {
+                std::cerr << "smash error: fg: invalid arguments" << std::endl;
+                return;
+            }
+        }
+        else if (!isStringNumber(jobID_argument)) {
+            std::cerr << "smash error: fg: invalid arguments" << std::endl;
+            return;
+        }
+        int job_id = std::stoi(jobID_argument); // convert argument string to integer
         if (job_id == 0) {
             std::cerr << "smash error: fg: invalid arguments" << std::endl;
+            return;
         }
 
         job = jobs->getJobById(job_id);
@@ -364,7 +391,7 @@ void ForegroundCommand::execute() {
     if (job->is_stopped) {
         int killSYSCALL_result = kill(job->pid, SIGCONT);
         if (killSYSCALL_result == -1) {
-            std::perror("smash error: kill  failed");
+            std::perror("smash error: kill failed");
             return;
         }
     }
@@ -386,14 +413,17 @@ void BackgroundCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     if (this->getArgByIndex(2) != nullptr) {
         std::cerr << "smash error: bg: invalid arguments" << std::endl;
+        return;
     }
 
     JobsList::JobEntry* job = nullptr;
     if (this->getArgByIndex(1) != nullptr) {
         std::string jobID_argument = this->getArgByIndex(1);
-        int job_id = std::stoi(jobID_argument); // convert argument string ti intger
+
+        int job_id = std::stoi(jobID_argument); // convert argument string to integer
         if (job_id == 0) {
             std::cerr << "smash error: bg: invalid arguments" << std::endl;
+            return;
         }
 
         job = jobs->getJobById(job_id);
@@ -414,7 +444,7 @@ void BackgroundCommand::execute() {
         * the maximal job id in the jobs list should be selected
         */
         int last_jobID = 0;
-        job = jobs->getLastJob(&last_jobID);
+        job = jobs->getLastStoppedJob(&last_jobID);
         if (job == nullptr) {
             std::cerr << "smash error: bg: there is no stopped jobs to resume" << std::endl;
             return;
@@ -447,9 +477,7 @@ void QuitCommand::execute() {
 
 void KillCommand::execute() {
     this->jobs->removeFinishedJobs();
-    int jobID = -1, signalNumber = -1;
-    //char** smashArguments = new char * [COMMAND_MAX_ARGS];
-    //int argumentsNumber= _parseCommandLine(this->getCmdLine(), smashArguments);
+    int jobID = -111, signalNumber = -111; // -111  EROOR
 
     if (this->getArgByIndex(2)) {
         jobID = atoi(this->getArgByIndex(2));
@@ -459,7 +487,7 @@ void KillCommand::execute() {
         signalNumber = atoi(this->getArgByIndex(1)) * -1;
     }
 
-    if (this->getArgByIndex(3) || jobID == -1 || signalNumber == -1 || signalNumber < 1 || signalNumber > 31) {
+    if (this->getArgByIndex(3) || jobID == -111 || jobID == 0 || signalNumber == -111 || signalNumber < 1 || signalNumber > 31) {
         std::cerr << "smash error: kill: invalid arguments" << std::endl;
         return;
     }
@@ -541,6 +569,7 @@ void PipeCommand::execute() {
     pid_t child2;
     std::string command_line;
 
+    // son- command1
     if ((child1 = fork()) == 0) {
         setpgrp();
         if (close(fd_pipe[1]) == -1) {
@@ -585,6 +614,7 @@ void PipeCommand::execute() {
         exit(1);
     }
 
+    // father- command2
     //child2 = fork();
     else if ((child1 != -1) && ((child2 = fork()) == 0)) {
         setpgrp();
@@ -841,11 +871,19 @@ void TimeoutCommand::getDataFromTimeOutCommand(const char *cmd) {
 void TimeoutCommand::execute() {
     getDataFromTimeOutCommand(this->getCmdLine());
 
+    /*
     if (error_type == TOO_FEW_ARGS) {
-        std::cerr<< "smash error: timeout: too few arguments" << std::endl;
+        std::cerr << "smash error: timeout: too few arguments" << std::endl;
+        return;
     }
     if(error_type == TIMEOUT_NUMBER_IS_NOT_INTEGER) {
         cerr << "smash error: timeout: bad arguments" << endl;
+        return;
+    }
+    */
+    if (error_type == TOO_FEW_ARGS || error_type == TIMEOUT_NUMBER_IS_NOT_INTEGER) {
+        std::cerr << "smash error: timeout: invalid arguments" << std::endl;
+        return;
     }
 
     SmallShell& shell = SmallShell::getInstance();
@@ -881,7 +919,9 @@ void TimeoutCommand::execute() {
             alarm(seconds);
 
             if (is_bg) {
-                shell.jobs.addJob(this, pid, false);
+                TimeoutCommand* copy_command = new TimeoutCommand(*this);
+                shell.jobs.addJob(copy_command, pid, false);
+                //shell.jobs.addJob(this, pid, false);
             }
             else {
                 if(waitpid(pid, nullptr,WUNTRACED) == -1) {
