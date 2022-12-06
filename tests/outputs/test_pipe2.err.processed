@@ -1,2 +1,3 @@
 smash error: pipe failed: Too many open files
-runner: Timeout, killing child
+smash error: pipe failed: Too many open files
+smash error: pipe failed: Too many open files

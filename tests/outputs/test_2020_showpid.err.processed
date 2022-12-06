@@ -1,4 +1,3 @@
 smash error: pipe failed: Too many open files
 grep: error while loading shared libraries: libpcre.so.3: cannot open shared object file: Error 24
-runner: Timeout, killing child
 smash error: pipe failed: Too many open files

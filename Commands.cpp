@@ -825,8 +825,8 @@ void PipeCommand::execute() {
         if (close(fd_pipe[0]) == -1) {
             std::perror("smash error: close failed");
             return;
-        }
-        exit(1);
+        }l
+        exit(0);
     }
 
     // father- command2
