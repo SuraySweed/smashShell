@@ -1,1 +1,1 @@
-/bin/bash: ./echo: No such file or directory
+smash error: execvp failed: No such file or directory

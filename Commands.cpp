@@ -127,6 +127,7 @@ Command::~Command() {
     delete[] cmd_line;
 }
 
+
 void ChangePromptCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     // there are no arguments
@@ -512,6 +513,70 @@ void KillCommand::execute() {
     this->jobs->removeFinishedJobs();
 }
 
+ExternalCommand::ExternalCommand(const char *cmd_line, JobsList *jobs, bool is_bg) : Command(cmd_line), jobs(jobs),
+    is_backGround(is_bg), is_complex_command(isComplexCommand()) {}
+
+
+void ExternalCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+    pid_t pid = fork();
+    if (pid == -1) {
+        std::perror("smash error: fork failed");
+        return;
+    }
+    if (pid == 0) {
+        int setGroup_result = setpgrp();
+        if (setGroup_result == -1) {
+            std::perror("smash error: setpgrp failed");
+            return;
+        }
+        if (is_complex_command) {
+            char* destination = new char[81];
+            strcpy(destination, this->getCmdLine());
+
+            char* argv[] = {(char*)"/bin/bash", (char*)"-c", destination, nullptr};
+            int execvResult = execv("/bin/bash", argv);
+            if (execvResult == -1) {
+                perror("smash error: execv failed");
+                return;
+            }
+        }
+        else {
+            char* cmd = new char[81];
+            strcpy(cmd, this->getCmdLine());
+
+            if (is_backGround) {
+                _removeBackgroundSign(cmd);
+            }
+            char* args[COMMAND_MAX_ARGS + 1] = {nullptr};
+            _parseCommandLine(cmd, args);
+            //char* argv[] = {(char*)"/bin/bash", (char*)"-c", cmd, nullptr};
+            int execvpResult = execvp(args[0], args);
+            if (execvpResult == -1) {
+                perror("smash error: execvp failed");
+                return;
+            }
+        }
+    }
+    else {
+        if (!is_backGround) {
+            int status = 0;
+            shell.setCurrentRunningJobPID(pid);
+            shell.setCurrentCommandLine(std::string(this->getCmdLine()));
+            int waitResult = waitpid(pid, &status, WUNTRACED);
+            if (waitResult == -1) {
+                perror("smash error: waitpid failed");
+                return;
+            }
+        }
+        else {
+            ExternalCommand* externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
+            jobs->addJob(externalCmd, pid, false);
+        }
+    }
+}
+
+/*
 void ExternalCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     pid_t pid = fork();
@@ -533,7 +598,7 @@ void ExternalCommand::execute() {
         }
 
         int execlResult = execl("/bin/bash", "/bin/bash", "-c", external_cmd_line, nullptr);
-        if (execlResult == -1) {
+        if (execlRelsult == -1) {
             perror("smash error: execl failed");
             return;
         }
@@ -556,6 +621,156 @@ void ExternalCommand::execute() {
         }
     }
 }
+*/
+/*
+void ExternalCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
+
+    //char* command_not_bg = (char*)malloc(sizeof(char) * strlen(this->getCmdLine() + 1));
+    //strcpy(command_not_bg, this->getCmdLine());
+
+    if (this->getArgumentsNumber() == 1) {
+        pid_t pid = fork();
+        if (pid == -1) {
+            std::perror("smash error: fork failed");
+            return;
+        }
+
+        if (pid == 0) {
+            int setGroup_result = setpgrp();
+            if (setGroup_result == -1) {
+                std::perror("smash error: setpgrp failed");
+                return;
+            }
+
+            if (is_backGround) {
+                _removeBackgroundSign(external_cmd_line);
+            }
+
+            int execvpResult = execvp(this->getArgByIndex(0), this->getCommandArguments());
+            if (execvpResult == -1) {
+                perror("smash error: execvp failed");
+                return;
+            }
+            //exit(0);
+        }
+        else {
+            int status = 0;
+            if (!is_backGround) {
+                shell.setCurrentRunningJobPID(pid);
+                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
+                int waitResult = waitpid(pid, &status, WUNTRACED);
+                if (waitResult == -1) {
+                    perror("smash error: waitpid failed");
+                    return;
+                }
+                shell.setCurrentRunningJobPID(-1);
+            }
+            else {
+                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
+                jobs->addJob(externalCmd, pid, false);
+            }
+        }
+        return;
+    }
+    // complex command
+    if (this->getCommandArguments()[1][0] == '*' || this->getCommandArguments()[1][0] == '?') {
+        char* bash_cmd_line[] = {(char*)"bash", (char*)"-c", external_cmd_line, nullptr};
+        pid_t pid = fork();
+        if (pid == -1) {
+            std::perror("smash error: fork failed");
+            return;
+        }
+
+        if (pid == 0) {
+            int setGroup_result = setpgrp();
+            if (setGroup_result == -1) {
+                std::perror("smash error: setpgrp failed");
+                return;
+            }
+            int execvResult = execv("/bin/bash", bash_cmd_line);
+            if (execvResult == -1) {
+                perror("smash error: execv failed");
+                return;
+            }
+            //exit(0);
+        }
+        else {
+            int status = 0;
+            if (!is_backGround) {
+                shell.setCurrentRunningJobPID(pid);
+                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
+                int waitResult = waitpid(pid, &status, WUNTRACED);
+                if (waitResult == -1) {
+                    perror("smash error: waitpid failed");
+                    return;
+                }
+                shell.setCurrentRunningJobPID(-1);
+            }
+            else {
+                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
+                jobs->addJob(externalCmd, pid, false);
+            }
+        }
+        return;
+    }
+    else {
+        pid_t pid = fork();
+        if (pid == -1) {
+            std::perror("smash error: fork failed");
+            return;
+        }
+
+        char* new_command = (char*)malloc(sizeof("/bin/") + sizeof(this->getArgByIndex(0)));
+        char** new_parametrs = (char**)malloc(sizeof(char*) * COMMAND_MAX_ARGS);
+        _parseCommandLine(external_cmd_line, new_parametrs);
+
+        if (pid == 0) {
+            int setGroup_result = setpgrp();
+            if (setGroup_result == -1) {
+                std::perror("smash error: setpgrp failed");
+                return;
+            }
+
+            strcpy(new_command, "/bin/");
+            strcat(new_command, this->getArgByIndex(0));
+
+            int execvResult = execvp(new_command, new_parametrs);
+            if (execvResult == -1) {
+                perror("smash error: execvp failed");
+                return;
+            }
+            //exit(0);
+        }
+        else {
+            free(new_command);
+            for (int i = 0; i < this->getArgumentsNumber(); i++) {
+                free(new_parametrs[i]);
+            }
+            free(new_parametrs);
+
+            int status = 0;
+            if (!is_backGround) {
+                shell.setCurrentRunningJobPID(pid);
+                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
+                int waitResult = waitpid(pid, &status, WUNTRACED);
+                if (waitResult == -1) {
+                    perror("smash error: waitpid failed");
+                    return;
+                }
+                shell.setCurrentRunningJobPID(-1);
+                if (WIFSTOPPED(status)) {
+                    return;
+                }
+            }
+            else {
+                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
+                jobs->addJob(externalCmd, pid, false);
+            }
+        }
+    }
+}
+*/
 
 void PipeCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();

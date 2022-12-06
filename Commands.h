@@ -55,13 +55,16 @@ public:
 class ExternalCommand : public Command {
     JobsList* jobs;
     bool is_backGround;
-    char* external_cmd_line;
-public:
-    ExternalCommand(const char* cmd_line, JobsList* jobs, bool is_bg) : Command(cmd_line), jobs(jobs), is_backGround(is_bg) {
-        //external_cmd_line = new char[81];
-        //strcpy(external_cmd_line, this->getCmdLine());
-        external_cmd_line = this->getCmdLine();
+    bool is_complex_command;
+    //std::string external_cmd_line;
+
+    bool isComplexCommand() {
+        std::string command_str = std::string(this->getCmdLine());
+        return ((command_str.find("*") != std::string::npos) || (command_str.find("?") != std::string::npos));
     }
+
+public:
+    ExternalCommand(const char* cmd_line, JobsList* jobs, bool is_bg);
     virtual ~ExternalCommand() = default;
     void execute() override;
 };
