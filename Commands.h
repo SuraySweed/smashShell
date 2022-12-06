@@ -74,9 +74,13 @@ enum pipeType {STDERROR, STDIN};
 class PipeCommand : public Command {
 private:
     pipeType std_type;
+    std::string command1;
+    std::string command2;
+
 public:
     PipeCommand(const char* cmd_line, pipeType type) : Command(cmd_line), std_type(type) {}
     virtual ~PipeCommand() = default;
+    void prepare();
     void execute() override;
 };
 

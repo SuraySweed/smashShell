@@ -477,18 +477,35 @@ void QuitCommand::execute() {
 }
 
 void KillCommand::execute() {
+    SmallShell& shell = SmallShell::getInstance();
     this->jobs->removeFinishedJobs();
+    if (this->getArgumentsNumber() < 3 || this->getArgumentsNumber() > 3) {
+        std::cerr << "smash error: kill: invalid arguments" << std::endl;
+        return;
+    }
+
     int jobID = -111, signalNumber = -111; // -111  EROOR
 
-    if (this->getArgByIndex(2)) {
-        jobID = atoi(this->getArgByIndex(2));
+    try {
+        jobID = stoi(this->getArgByIndex(2));//convert string to int to get the job_id
+    } catch(exception &e) {
+        std::cerr << "smash error: kill: invalid arguments" << endl;
+        return;
     }
 
-    if (this->getArgByIndex(1)) {
-        signalNumber = atoi(this->getArgByIndex(1)) * -1;
+    if (this->getArgByIndex(1)[0] != '-') {
+        std::cerr << "smash error: kill: invalid arguments" << endl;
+        return;
     }
 
-    if (this->getArgByIndex(3) || jobID == -111 || jobID == 0 || signalNumber == -111 || signalNumber < 1 || signalNumber > 31) {
+    try {
+        signalNumber = stoi(string(this->getArgByIndex(1)).substr(1, string(this->getArgByIndex(1)).size() - 1));
+    } catch(exception &e) {
+        std::cerr << "smash error: kill: invalid arguments" << endl;
+        return;
+    }
+
+    if (jobID == -111 || jobID == 0 || signalNumber == -111 || signalNumber < 0 || signalNumber > 31) {
         std::cerr << "smash error: kill: invalid arguments" << std::endl;
         return;
     }
@@ -508,9 +525,18 @@ void KillCommand::execute() {
         std::perror("smash error: kill failed");
         return;
     }
+    else {
+        std::cout << "signal number " << signalNumber << " was sent to pid " << job->pid << std::endl;
+        this->jobs->removeFinishedJobs();
+        if(signalNumber == SIGKILL) {
+            if(waitpid(job->pid, NULL, 0) == -1) {
+                std::perror("smash error: waitpid failed");
+                return;
+            }
 
-    std::cout << "signal number " << signalNumber <<  " was sent to pid " << job->pid << std::endl;
-    this->jobs->removeFinishedJobs();
+            shell.jobs.removeJobById(jobID);
+        }
+    }
 }
 
 ExternalCommand::ExternalCommand(const char *cmd_line, JobsList *jobs, bool is_bg) : Command(cmd_line), jobs(jobs),
@@ -576,202 +602,134 @@ void ExternalCommand::execute() {
     }
 }
 
-/*
-void ExternalCommand::execute() {
-    SmallShell& shell = SmallShell::getInstance();
-    pid_t pid = fork();
+void PipeCommand::prepare() {
+    size_t pipe_index = string(this->getCmdLine()).find(PIPE_TO_STDIN);
+    if (std_type == STDERROR) {
+        pipe_index = string(this->getCmdLine()).find(PIPE_TO_STDERROR);
+    }
+    string cmd_splitted1 = string(this->getCmdLine());
+    string cmd_splitted2 = string(this->getCmdLine());
 
-    if (pid == -1) {
-        std::perror("smash error: fork failed");
+    command1 = cmd_splitted1.substr(0, pipe_index);
+    pipe_index++;
+    if (std_type == STDERROR) {
+        pipe_index++;
+    }
+
+    string str_temp = cmd_splitted2.substr(pipe_index, cmd_splitted1.length() - pipe_index);
+    str_temp= _trim(str_temp);
+    str_temp += " ";
+    command2 = str_temp.substr(0, str_temp.find_last_of(WHITESPACE));
+}
+
+void PipeCommand::execute() {
+    this->prepare();
+    SmallShell& shell = SmallShell::getInstance();
+    int fd_pipe[2];
+
+    if(pipe(fd_pipe) == -1) {
+        std::perror("smash error: pipe failed");
         return;
     }
 
-    if (pid == 0) {
+    pid_t child1_pid = fork();
+    if(child1_pid == -1){
+        std::perror("smash error: fork failed");
+        return;
+    }
+    if (child1_pid == 0) {
         int setGroup_result = setpgrp();
         if (setGroup_result == -1) {
             std::perror("smash error: setpgrp failed");
             return;
         }
 
-        if (is_backGround) {
-            _removeBackgroundSign(external_cmd_line);
-        }
-
-        int execlResult = execl("/bin/bash", "/bin/bash", "-c", external_cmd_line, nullptr);
-        if (execlRelsult == -1) {
-            perror("smash error: execl failed");
-            return;
-        }
-    }
-    else {
-        int status = 0;
-
-        if (!is_backGround) {
-            shell.setCurrentRunningJobPID(pid);
-            shell.setCurrentCommandLine(std::string(this->getCmdLine()));
-            int waitResult = waitpid(pid, &status, WUNTRACED);
-            if (waitResult == -1) {
-                perror("smash error: waitpid failed");
+        if(std_type == STDERROR) {
+            if(dup2(fd_pipe[1], 2) == -1) {
+                std::perror("smash error: dup2 failed");
+                return;
+            }
+            if(close(fd_pipe[0])==-1) {
+                std::perror("smash error: close failed");
+                return;
+            }
+            if(close(fd_pipe[1])==-1) {
+                std::perror("smash error: close failed");
                 return;
             }
         }
+
         else {
-            ExternalCommand* externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
-            jobs->addJob(externalCmd, pid, false);
+            if(dup2(fd_pipe[1], 1) == -1) {
+                std::perror("smash error: dup2 failed");
+                return;
+            }
+            if(close(fd_pipe[0]) == -1) {
+                std::perror("smash error: close failed");
+                return;
+            }
+            if(close(fd_pipe[1]) == -1) {
+                std::perror("smash error: close failed");
+                return;
+            }
         }
+
+        Command* pipe_command = shell.CreateCommand(command1.c_str());
+        pipe_command->execute();
+        exit(0);
     }
+
+    pid_t child2_pid = fork();
+    if(child2_pid == -1){
+        std::perror("smash error: fork failed");
+        return;
+    }
+
+    if (child2_pid == 0) {
+        if( setpgrp()==-1){
+            std::perror("smash error: setpgrp failed");
+            return;
+        }
+        if(dup2(fd_pipe[0], 0) == -1) {
+            std::perror("smash error: dup2 failed");
+            return;
+        }
+        if( close(fd_pipe[0]) == -1) {
+            std::perror("smash error: close failed");
+            return;
+        }
+        if(close(fd_pipe[1]) == -1) {
+            std::perror("smash error: close failed");
+            return;
+        }
+
+        Command* my_command = shell.CreateCommand(command2.c_str());
+        my_command->execute();
+        exit(0);
+    }
+
+    if(close(fd_pipe[0]) == -1) {
+        std::perror("smash error: close failed");
+        return;
+    }
+    if(close(fd_pipe[1])) {
+        std::perror("smash error: close failed");
+        return;
+    }
+
+
+    if(waitpid(child1_pid, NULL, WUNTRACED) == -1) {
+        std::perror("smash error: waitpid failed");
+        return;
+    }
+    if(waitpid(child2_pid, NULL, WUNTRACED)==-1){
+        std::perror("smash error: waitpid failed");
+        return;
+    }
+    return;
 }
-*/
+
 /*
-void ExternalCommand::execute() {
-    SmallShell& shell = SmallShell::getInstance();
-
-    //char* command_not_bg = (char*)malloc(sizeof(char) * strlen(this->getCmdLine() + 1));
-    //strcpy(command_not_bg, this->getCmdLine());
-
-    if (this->getArgumentsNumber() == 1) {
-        pid_t pid = fork();
-        if (pid == -1) {
-            std::perror("smash error: fork failed");
-            return;
-        }
-
-        if (pid == 0) {
-            int setGroup_result = setpgrp();
-            if (setGroup_result == -1) {
-                std::perror("smash error: setpgrp failed");
-                return;
-            }
-
-            if (is_backGround) {
-                _removeBackgroundSign(external_cmd_line);
-            }
-
-            int execvpResult = execvp(this->getArgByIndex(0), this->getCommandArguments());
-            if (execvpResult == -1) {
-                perror("smash error: execvp failed");
-                return;
-            }
-            //exit(0);
-        }
-        else {
-            int status = 0;
-            if (!is_backGround) {
-                shell.setCurrentRunningJobPID(pid);
-                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
-                int waitResult = waitpid(pid, &status, WUNTRACED);
-                if (waitResult == -1) {
-                    perror("smash error: waitpid failed");
-                    return;
-                }
-                shell.setCurrentRunningJobPID(-1);
-            }
-            else {
-                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
-                jobs->addJob(externalCmd, pid, false);
-            }
-        }
-        return;
-    }
-    // complex command
-    if (this->getCommandArguments()[1][0] == '*' || this->getCommandArguments()[1][0] == '?') {
-        char* bash_cmd_line[] = {(char*)"bash", (char*)"-c", external_cmd_line, nullptr};
-        pid_t pid = fork();
-        if (pid == -1) {
-            std::perror("smash error: fork failed");
-            return;
-        }
-
-        if (pid == 0) {
-            int setGroup_result = setpgrp();
-            if (setGroup_result == -1) {
-                std::perror("smash error: setpgrp failed");
-                return;
-            }
-            int execvResult = execv("/bin/bash", bash_cmd_line);
-            if (execvResult == -1) {
-                perror("smash error: execv failed");
-                return;
-            }
-            //exit(0);
-        }
-        else {
-            int status = 0;
-            if (!is_backGround) {
-                shell.setCurrentRunningJobPID(pid);
-                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
-                int waitResult = waitpid(pid, &status, WUNTRACED);
-                if (waitResult == -1) {
-                    perror("smash error: waitpid failed");
-                    return;
-                }
-                shell.setCurrentRunningJobPID(-1);
-            }
-            else {
-                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
-                jobs->addJob(externalCmd, pid, false);
-            }
-        }
-        return;
-    }
-    else {
-        pid_t pid = fork();
-        if (pid == -1) {
-            std::perror("smash error: fork failed");
-            return;
-        }
-
-        char* new_command = (char*)malloc(sizeof("/bin/") + sizeof(this->getArgByIndex(0)));
-        char** new_parametrs = (char**)malloc(sizeof(char*) * COMMAND_MAX_ARGS);
-        _parseCommandLine(external_cmd_line, new_parametrs);
-
-        if (pid == 0) {
-            int setGroup_result = setpgrp();
-            if (setGroup_result == -1) {
-                std::perror("smash error: setpgrp failed");
-                return;
-            }
-
-            strcpy(new_command, "/bin/");
-            strcat(new_command, this->getArgByIndex(0));
-
-            int execvResult = execvp(new_command, new_parametrs);
-            if (execvResult == -1) {
-                perror("smash error: execvp failed");
-                return;
-            }
-            //exit(0);
-        }
-        else {
-            free(new_command);
-            for (int i = 0; i < this->getArgumentsNumber(); i++) {
-                free(new_parametrs[i]);
-            }
-            free(new_parametrs);
-
-            int status = 0;
-            if (!is_backGround) {
-                shell.setCurrentRunningJobPID(pid);
-                shell.setCurrentCommandLine(std::string(this->getCmdLine()));
-                int waitResult = waitpid(pid, &status, WUNTRACED);
-                if (waitResult == -1) {
-                    perror("smash error: waitpid failed");
-                    return;
-                }
-                shell.setCurrentRunningJobPID(-1);
-                if (WIFSTOPPED(status)) {
-                    return;
-                }
-            }
-            else {
-                ExternalCommand *externalCmd = new ExternalCommand(this->getCmdLine(), jobs, is_backGround);
-                jobs->addJob(externalCmd, pid, false);
-            }
-        }
-    }
-}
-*/
-
 void PipeCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     int fd_pipe[2];
@@ -825,7 +783,7 @@ void PipeCommand::execute() {
         if (close(fd_pipe[0]) == -1) {
             std::perror("smash error: close failed");
             return;
-        }l
+        }
         exit(0);
     }
 
@@ -897,6 +855,7 @@ void PipeCommand::execute() {
         waitpid(child2, nullptr, 0);
     }
 }
+*/
 
 void RedirectionCommand::getDataFromRedirection(std::string cmd) {
     if (cmd.empty()) {
