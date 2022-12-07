@@ -17,6 +17,7 @@
 #define BG "bg"
 #define QUIT "quit"
 #define TIMEOUT "timeout"
+#define SET_CORE "setcore"
 #define PIPE_TO_STDERROR "|&"
 #define PIPE_TO_STDIN "|"
 #define OUTPUT_APPEND ">>"
@@ -276,21 +277,22 @@ public:
     void execute() override;
 };
 
+/*
+ * optional
+ *
 class FareCommand : public BuiltInCommand {
-  /* Optional */
-  // TODO: Add your data members
  public:
   FareCommand(const char* cmd_line);
   virtual ~FareCommand() {}
   void execute() override;
 };
+*/
 
 class SetcoreCommand : public BuiltInCommand {
-  /* Optional */
-  // TODO: Add your data members
+
  public:
-  SetcoreCommand(const char* cmd_line);
-  virtual ~SetcoreCommand() {}
+  SetcoreCommand(const char* cmd_line) : BuiltInCommand(cmd_line) {}
+  virtual ~SetcoreCommand() = default;
   void execute() override;
 };
 

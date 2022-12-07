@@ -127,7 +127,6 @@ Command::~Command() {
     delete[] cmd_line;
 }
 
-
 void ChangePromptCommand::execute() {
     SmallShell& shell = SmallShell::getInstance();
     // there are no arguments
@@ -576,12 +575,14 @@ void ExternalCommand::execute() {
             }
             char* args[COMMAND_MAX_ARGS + 1] = {nullptr};
             _parseCommandLine(cmd, args);
-            //char* argv[] = {(char*)"/bin/bash", (char*)"-c", cmd, nullptr};
+
             int execvpResult = execvp(args[0], args);
             if (execvpResult == -1) {
+                delete[] cmd;
                 perror("smash error: execvp failed");
                 return;
             }
+            delete[] cmd;
         }
     }
     else {
@@ -728,134 +729,6 @@ void PipeCommand::execute() {
     }
     return;
 }
-
-/*
-void PipeCommand::execute() {
-    SmallShell& shell = SmallShell::getInstance();
-    int fd_pipe[2];
-    if (pipe(fd_pipe) == -1) {
-        std::perror("smash error: pipe failed");
-        return;
-    }
-
-    pid_t child1;
-    pid_t child2;
-    std::string command_line;
-
-    // son- command1
-    if ((child1 = fork()) == 0) {
-        setpgrp();
-        if (close(fd_pipe[1]) == -1) {
-            std::perror("smash error: close failed");
-            return;
-        }
-        int stdin_fd = dup(0);
-        if (stdin_fd == -1) {
-            std::perror("smash error: dup failed");
-            return;
-        }
-
-        if (dup2(fd_pipe[0],0) == -1){
-            std::perror("smash error: dup2 failed");
-            return;
-        }
-
-        if (std_type == STDERROR) {
-            int begin = string(this->getCmdLine()).find_first_of(PIPE_TO_STDIN) + 2;
-            command_line = _trim (string(this->getCmdLine()).substr(begin));
-        }
-        else {
-            int begin = string((this->getCmdLine())).find_first_of(PIPE_TO_STDIN) + 1;
-            command_line = _trim ((string(this->getCmdLine())).substr(begin));
-        }
-
-        char* line = new char[81];
-        strcpy(line, command_line.c_str());
-        Command* cmd = shell.CreateCommand(line);
-        cmd->execute();
-        delete cmd;
-
-        if (dup2(stdin_fd,0) == -1) {
-            std::perror("smash error: dup2 failed");
-            return;
-        }
-
-        if (close(fd_pipe[0]) == -1) {
-            std::perror("smash error: close failed");
-            return;
-        }
-        exit(0);
-    }
-
-    // father- command2
-    //child2 = fork();
-    else if ((child1 != -1) && ((child2 = fork()) == 0)) {
-        setpgrp();
-        if (close(fd_pipe[0]) == -1){
-            std::perror("smash error: close failed");
-            return;
-        }
-
-        int stdout_error_fd;
-        if (std_type == STDERROR) {
-            stdout_error_fd = dup(2);
-            if(stdout_error_fd == -1) {
-                std::perror("smash error: dup failed");
-                return;
-            }
-
-            if (dup2(fd_pipe[1], 2) == -1) {
-                std::perror("smash error: dup2 failed");
-                return;
-            }
-        }
-        else {
-            stdout_error_fd = dup(1);
-            if(stdout_error_fd == -1) {
-                std::perror("smash error: dup failed");
-                return;
-            }
-            if (dup2(fd_pipe[1], 1) == -1){
-                std::perror("smash error: dup2 failed");
-                return;
-            }
-        }
-
-        int end = (string(this->getCmdLine())).find_first_of("PIPE_TO_STDIN");
-        command_line = _trim (string(this->getCmdLine()).substr(0, end));
-        char* line = new char[81];
-        strcpy(line, command_line.c_str());
-        Command* cmd = shell.CreateCommand(line);
-        cmd->execute();
-        delete cmd;
-
-        if (std_type == STDERROR) {
-            if (dup2(stdout_error_fd, 2) == -1) {
-                std::perror("smash error: dup2 failed");
-                return;
-            }
-        }
-        else {
-            if (dup2(stdout_error_fd, 1) == -1) {
-                std::perror("smash error: dup2 failed");
-                return;
-            }
-        }
-        close(fd_pipe[1]);
-        exit(1);
-    }
-    else {
-        if (child1 == -1 || child2 == -1){
-            std::perror("smash error: fork failed");
-        }
-
-        close(fd_pipe[0]);
-        close(fd_pipe[1]);
-        waitpid(child1, nullptr, 0);
-        waitpid(child2, nullptr, 0);
-    }
-}
-*/
 
 void RedirectionCommand::getDataFromRedirection(std::string cmd) {
     if (cmd.empty()) {
@@ -1109,6 +982,33 @@ void TimeoutCommand::execute() {
     shell.setAlarmedJobs(false);
 }
 
+void SetcoreCommand::execute() {
+    if (this->getArgumentsNumber() != 3) {
+        std::cerr << "smash error: setcore: invalid arguments" << "\r\n";
+        return;
+    }
+
+    SmallShell& smash = SmallShell::getInstance();
+    try {
+        JobsList::JobEntry* job = smash.jobs.getJobById(stoi(this->getArgByIndex(1)));
+        if(!job) {
+            std::cerr << "smash error: setcore: job-id "<< this->getArgByIndex(1) << " does not exist" << "\r\n";
+            return;
+        }
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        CPU_SET(stoi(this->getArgByIndex(2)), &mask);
+        int schedResult = sched_setaffinity(job->pid, sizeof(mask), &mask);
+        if(schedResult == -1){
+            cerr<<"smash error: setcore: invalid core number"<<"\r\n";
+            return;
+        }
+    } catch(exception &e) {
+        std::cerr << "smash error: setcore: invalid arguments" << "\r\n";
+        return;
+    }
+}
+
 SmallShell::SmallShell() : smash_pid(getpid()), current_prompt("smash"), last_dir_path(nullptr), current_running_jobPID(-1),
                 cuurent_command_line(), timed_jobs(new TimedJobs()), is_alarmed_job(false) {}
 
@@ -1175,7 +1075,9 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     else if (strcmp(args_making[0], TIMEOUT) == 0) {
         return new TimeoutCommand(cmd_line);
     }
-
+    else if (strcmp(args_making[0], SET_CORE) == 0) {
+        return new SetcoreCommand(cmd_line);
+    }
     else {
         bool is_backGround = _isBackgroundComamnd(cmd_line);
         return new ExternalCommand(cmd_line, &jobs, is_backGround);
